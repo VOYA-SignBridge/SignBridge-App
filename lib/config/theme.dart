@@ -1,32 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+class AppColors {
+  static const Color primary = Color(0xFF45C8C2);
+  static const Color background = Color(0xFFE8E8E8);
+  static const Color textPrimary = Color(0xFF111111);
+  static const Color textSecondary = Color(0xFF666666);
+}
 
 class AppTheme {
-  static const MaterialColor primarySeedColor = Colors.deepPurple;
-
   static final TextTheme appTextTheme = TextTheme(
-    displayLarge: GoogleFonts.oswald(fontSize: 57, fontWeight: FontWeight.bold),
-    titleLarge: GoogleFonts.roboto(fontSize: 22, fontWeight: FontWeight.w500),
-    bodyMedium: GoogleFonts.openSans(fontSize: 14),
+    displayLarge: TextStyle(
+      fontSize: 57,
+      fontWeight: FontWeight.bold,
+      color: AppColors.textPrimary,
+    ),
+    titleLarge: TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.w500,
+      color: AppColors.textPrimary,
+    ),
+    bodyMedium: TextStyle(fontSize: 14, color: AppColors.textSecondary),
   );
 
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: primarySeedColor,
+      seedColor: AppColors.primary,
       brightness: Brightness.light,
+      primary: AppColors.primary,
+      onPrimary: AppColors.textPrimary,
+      surface: AppColors.background,
+      onSurface: AppColors.textSecondary,
     ),
     textTheme: appTextTheme,
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.white,
-        backgroundColor: primarySeedColor,
+        foregroundColor: AppColors.textPrimary,
+        backgroundColor: AppColors.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        textStyle: GoogleFonts.roboto(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
       ),
     ),
   );
@@ -34,20 +47,21 @@ class AppTheme {
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: primarySeedColor,
+      seedColor: AppColors.primary,
       brightness: Brightness.dark,
+      primary: AppColors.primary,
+      onPrimary: AppColors.textPrimary,
+      surface: AppColors.background,
+      onSurface: AppColors.textSecondary,
     ),
     textTheme: appTextTheme,
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.black,
-        backgroundColor: primarySeedColor.shade200,
+        foregroundColor: AppColors.textPrimary,
+        backgroundColor: AppColors.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        textStyle: GoogleFonts.roboto(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
       ),
     ),
   );
