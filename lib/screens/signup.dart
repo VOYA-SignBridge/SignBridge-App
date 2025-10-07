@@ -1,19 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../services/auth_service.dart';
 
-class SignInPage extends StatefulWidget {
-  const SignInPage({super.key});
+class SignUpPage extends StatefulWidget {
+  const SignUpPage({super.key});
 
   @override
-  _SignInPageState createState() => _SignInPageState();
+  _SignUpPageState createState() => _SignUpPageState();
 }
 
-class _SignInPageState extends State<SignInPage> {
+class _SignUpPageState extends State<SignUpPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _authService = AuthService();
 
-  void _signIn() {
-    context.go('/home');
+  Future<void> _signUp() async {
+    final success = await _authService.signUp(
+      _emailController.text,
+      _passwordController.text,
+      _confirmPasswordController.text,
+    );
+    if (success && mounted) {
+      context.go('/signin');
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đăng ký thất bại. Vui lòng thử lại.')),
+      );
+    }
   }
 
   @override
@@ -26,10 +40,7 @@ class _SignInPageState extends State<SignInPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.secondary,
-            ],
+            colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
           ),
         ),
         child: Center(
@@ -40,10 +51,7 @@ class _SignInPageState extends State<SignInPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Image.asset(
-                    'assets/images/logo.png',
-                    height: 200,
-                  ),
+                  Image.asset('assets/images/logo.png', height: 200),
                   const SizedBox(height: 16),
                   const Text(
                     'An AI-based Sign Language Translator',
@@ -69,18 +77,26 @@ class _SignInPageState extends State<SignInPage> {
                     obscureText: true,
                     theme: theme,
                   ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _confirmPasswordController,
+                    labelText: 'Confirm Password',
+                    icon: Icons.lock,
+                    obscureText: true,
+                    theme: theme,
+                  ),
                   const SizedBox(height: 32),
                   ElevatedButton(
-                    onPressed: _signIn,
-                    child: const Text('Sign In'),
+                    onPressed: _signUp,
+                    child: const Text('Sign Up'),
                   ),
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () {
-                      context.go('/signup');
+                      context.go('/signin');
                     },
                     child: const Text(
-                      'Don\'t have an account? Sign Up',
+                      'Already have an account? Sign In',
                       style: TextStyle(color: Colors.white70),
                     ),
                   ),
