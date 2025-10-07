@@ -17,7 +17,7 @@ class AccountScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout, color: AppColors.textPrimary),
             onPressed: () {
-              context.pushReplacementNamed('/signin');
+              context.go('/signin');
             },
           ),
         ],

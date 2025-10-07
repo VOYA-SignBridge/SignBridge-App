@@ -23,7 +23,7 @@ class _SignInScreenState extends State<SignInScreen> {
       context.go('/home');
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đăng nhập thất bại. Vui lòng thử lại.')),
+        const SnackBar(content: Text('Sign in failed. Please try again.')),
       );
     }
   }

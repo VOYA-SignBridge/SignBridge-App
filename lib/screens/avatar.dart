@@ -9,10 +9,8 @@ class AvatarScreen extends StatefulWidget {
 }
 
 class _AvatarScreenState extends State<AvatarScreen> {
-  // Lưu chỉ số avatar được chọn
   int _selectedAvatar = 1;
 
-  // Danh sách tạm để mô phỏng avatar
   final List<Map<String, dynamic>> avatars = [
     {"label": "Woman", "color": Colors.pink.shade200},
     {"label": "Girl", "color": Colors.teal.shade200},
@@ -31,7 +29,6 @@ class _AvatarScreenState extends State<AvatarScreen> {
           children: [
             const SizedBox(height: 24),
 
-            // --- Avatar chính ---
             Expanded(
               child: Center(
                 child: Container(
@@ -52,7 +49,7 @@ class _AvatarScreenState extends State<AvatarScreen> {
               ),
             ),
 
-            // --- Lưới chọn avatar ---
+            // --- Scroll and pick avatar ---
             Padding(
               padding: const EdgeInsets.all(20),
               child: GridView.builder(

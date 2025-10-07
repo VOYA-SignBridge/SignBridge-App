@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart'; // import file theme bạn đã tạo
+import '../config/theme.dart';
 
 class TranslationScreen extends StatefulWidget {
   const TranslationScreen({super.key});
@@ -20,7 +20,7 @@ class _TranslationScreenState extends State<TranslationScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // --- Khu vực chọn ngôn ngữ ---
+            // --- Pick Language ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
@@ -37,7 +37,7 @@ class _TranslationScreenState extends State<TranslationScreen> {
               ),
             ),
 
-            // --- Placeholder cho 3D model ---
+            // --- Placeholder 3D model ---
             Expanded(
               child: Center(
                 child: Container(
@@ -56,7 +56,7 @@ class _TranslationScreenState extends State<TranslationScreen> {
               ),
             ),
 
-            // --- Ô nhập văn bản có thể gõ ---
+            // --- Input ---
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 20.0,
@@ -109,7 +109,7 @@ class _TranslationScreenState extends State<TranslationScreen> {
   }
 }
 
-// --- Widget nút chọn ngôn ngữ ---
+// --- Widget pick language ---
 class _LanguageButton extends StatelessWidget {
   final String label;
 
