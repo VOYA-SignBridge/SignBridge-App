@@ -24,9 +24,17 @@ class AccountScreen extends StatelessWidget {
         backgroundColor: AppColors.background,
       ),
       body: Center(
-        child: Text(
-          "Account Screen",
-          style: TextStyle(color: AppColors.textPrimary),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Account Screen', style: TextStyle(fontSize: 24)),
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                context.go('/setting');
+              },
+            ),
+          ],
         ),
       ),
     );
