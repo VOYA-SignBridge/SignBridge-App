@@ -2,7 +2,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/signin.dart';
 import '../screens/signup.dart';
 import '../screens/home.dart';
-import '../screens/setting.dart';
+import '../screens/account.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -18,8 +18,8 @@ class AppRouter {
       ),
       GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
       GoRoute(
-        path: '/setting',
-        builder: (context, state) => const SettingPage(),
+        path: '/account',
+        builder: (context, state) => const AccountScreen(),
       ),
     ],
   );
