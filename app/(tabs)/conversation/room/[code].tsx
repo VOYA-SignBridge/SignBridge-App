@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity } from "react-native";
-import { privateApi } from "@/src/api/privateApi";
+import { privateApi } from "@/api/privateApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function RoomScreen() {
   const { code, participant_id, role, display_name, wsUrl } = useLocalSearchParams();
@@ -65,7 +65,7 @@ useEffect(() => {
 
       setParticipants((prev) => ({
         ...prev,
-        [participant_id]: {
+        [String(participant_id)]: {
           participant_id,
           display_name,
           role,

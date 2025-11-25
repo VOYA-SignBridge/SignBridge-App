@@ -1,71 +1,83 @@
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import { privateApi } from "@/src/api/privateApi";
+import { privateApi } from "@/api/privateApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import 'react-native-get-random-values';   // MUST be first
-import { v4 as uuidv4 } from "uuid";
-import { API_URL } from "@/src/config";
+import { API_URL } from "@/config";
 
 export default function ConversationScreen() {
   const router = useRouter();
   const [roomCode, setRoomCode] = useState("");
   const ttl_minutes = 120;
+  // Kiểu cho /rooms/create
+type CreateRoomResponse = {
+  code: string;
+};
+
+// Kiểu participant server trả về
+type Participant = {
+  id: string;
+  role: string;
+  display_name: string;
+};
+
+// Kiểu cho /rooms/{code}/join
+type JoinRoomResponse = {
+  participant: Participant;
+};
 
   // ---- CREATE ROOM ----
   const handleCreateRoom = async () => {
-    try {
-      const res = await privateApi.post("/rooms/create", null, {
-        params: { ttl_minutes }
-      });
+  try {
+    const res = await privateApi.post<CreateRoomResponse>("/rooms/create", null, {
+      params: { ttl_minutes },
+    });
 
-      console.log("Create room response", res.data);
+    console.log("Create room response", res.data);
 
-      handleJoinRoom(res.data.code);
-    } catch (err) {
-      console.log("Create room error:", err);
-    }
-  };
+    handleJoinRoom(res.data.code);
+  } catch (err) {
+    console.log("Create room error:", err);
+  }
+};
+
 
   // ---- JOIN ROOM ----
   const handleJoinRoom = async (overrideCode?: string) => {
-    const code = overrideCode || roomCode;
-    if (!code.trim()) return;
+  const code = overrideCode || roomCode;
+  if (!code.trim()) return;
 
-    try {
-      const res = await privateApi.post(`/rooms/${code}/join?role=normal`);
+  try {
+    const res = await privateApi.post<JoinRoomResponse>(`/rooms/${code}/join?role=normal`);
 
-      console.log("Join room response:", res.data);
-      const participant = res.data.participant;
-      console.log("Participant info:", participant);
-      
+    console.log("Join room response:", res.data);
+    const participant = res.data.participant;
+    console.log("Participant info:", participant);
 
-      // Build WebSocket URL
-      const WS_URL = API_URL.replace("http", "ws");
+    const WS_URL = API_URL.replace("http", "ws");
 
+    const wsUrl =
+      `${WS_URL}/ws/rooms/${code}` +
+      `?participant_id=${participant.id}` +
+      `&role=${participant.role}` +
+      `&display_name=${encodeURIComponent(participant.display_name)}`;
 
+    router.push({
+      pathname: "/conversation/room/[code]",
+      params: {
+        code,
+        participant_id: participant.id,
+        role: participant.role,
+        display_name: participant.display_name,
+        wsUrl,
+      },
+    });
+  } catch (err) {
+    console.log("Join room error:", err);
+  }
+};
 
-      const wsUrl = `${WS_URL}/ws/rooms/${code}` +
-        `?participant_id=${participant.id}` +
-        `&role=${participant.role}` +
-        `&display_name=${encodeURIComponent(participant.display_name)}` ;
-
-      // Navigate
-      router.push({
-        pathname: "/conversation/room/[code]",
-        params: {
-          code,
-          participant_id: participant.id,
-          role: participant.role,
-          display_name: participant.display_name,
-          wsUrl,
-        },
-      });
-
-    } catch (err) {
-      console.log("Join room error:", err);
-    }
-  };
 
   return (
     
