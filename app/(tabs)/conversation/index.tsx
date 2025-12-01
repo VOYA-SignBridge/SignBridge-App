@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { privateApi } from "@/api/privateApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import 'react-native-get-random-values';   // MUST be first
 import { API_URL } from "@/config";
 
 export default function ConversationScreen() {
