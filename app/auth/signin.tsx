@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
-import { supabase } from '../db/supabase';
+import { supabase } from '../../db/supabase';
 import AsyncStorage  from '@react-native-async-storage/async-storage';
 import { privateApi } from '@/api/privateApi';
 export default function SignInScreen() {

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator, Platform } from 'react-native';
 import { privateApi } from '@/api/privateApi';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -26,15 +26,48 @@ export default function WordMode({ onResult, theme }: Props) {
   const lastEventTime = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handlePressRecord = () => {
-    if (isRecording || isProcessing || countdown > 0) return;
+  const startRecordingNow = useCallback(() => {
+    keypointsBuffer.current = [];
+    setIsRecording(true);
+    setStatusMsg(`Đang thu: 0/${SEQ_LEN}`);
+  }, []);
+
+  const handlePressRecord = useCallback(() => {
+    if (isProcessing) return;
+
+    if (countdown > 0) {
+      setCountdown(0);
+      setStatusMsg('Đã hủy');
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
+    if (isRecording) {
+      setIsRecording(false);
+      keypointsBuffer.current = [];
+      setStatusMsg('Đã dừng');
+      return;
+    }
+
     setCountdown(3); 
     setStatusMsg(""); 
-  };
+  }, [isProcessing, countdown, isRecording]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleKeyDown = (e: any) => {
+        if (e.code === 'Space' || e.code === 'Enter') {
+            e.preventDefault();
+            handlePressRecord();
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [handlePressRecord]);
 
   useEffect(() => {
     if (countdown > 0) {
-
       timerRef.current = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
@@ -49,13 +82,7 @@ export default function WordMode({ onResult, theme }: Props) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [countdown === 3]);
-
-  const startRecordingNow = () => {
-    keypointsBuffer.current = [];
-    setIsRecording(true);
-    setStatusMsg(`Đang thu: 0/${SEQ_LEN}`);
-  };
+  }, [countdown, startRecordingNow]);
 
   useEffect(() => {
     const sub = eventEmitter.addListener('onHandLandmarksDetected', (event) => {
@@ -154,12 +181,12 @@ export default function WordMode({ onResult, theme }: Props) {
             (isRecording || countdown > 0) && styles.recordingBtn 
         ]}
         onPress={handlePressRecord}
-        disabled={isRecording || isProcessing || countdown > 0}
+        disabled={isProcessing}
       >
         {isProcessing ? (
             <ActivityIndicator color="white" size="large" />
         ) : (
-            <Ionicons name={isRecording ? "stop" : "videocam"} size={32} color="white" />
+            <Ionicons name={(isRecording || countdown > 0) ? "square" : "videocam"} size={32} color="white" />
         )}
       </TouchableOpacity>
       
