@@ -34,6 +34,12 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
 
     override fun getName() = "HandLandmarks"
 
+    @ReactMethod
+    fun addListener(eventName: String) {}
+
+    @ReactMethod
+    fun removeListeners(count: Int) {}
+
     private fun sendEvent(eventName: String, params: WritableMap) {
         if (reactApplicationContext.hasActiveCatalystInstance()) {
             try {

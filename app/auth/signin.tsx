@@ -2,28 +2,52 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
-import { supabase } from '../db/supabase';
+import { supabase } from '../../db/supabase';
 import AsyncStorage  from '@react-native-async-storage/async-storage';
+import { privateApi } from '@/api/privateApi';
 export default function SignInScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignIn = async () => {
-    if (!email || !password) {
-      Alert.alert('Missing fields', 'Please enter your email and password.');
-      return;
-    }
+const handleSignIn = async () => {
+  if (!email || !password) {
+    Alert.alert("Thiếu thông tin", "Vui lòng nhập email và mật khẩu.");
+    return;
+  }
 
-    const { data,error } = await supabase.auth.signInWithPassword({ email, password });
-    await AsyncStorage.setItem("access_token", data.session?.access_token || "");
-    if (error) {
-      Alert.alert('Error', error.message);
-    } else {
-      console.log("data", data.session?.access_token)
-      router.replace('/translation');
-    }
-  };
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error || !data.session) {
+    console.log("Sign-in error:", error);
+    Alert.alert("Đăng nhập thất bại", error?.message || "Không thể đăng nhập");
+    return;
+  }
+
+  const accessToken = data.session.access_token;
+  console.log("Supabase access_token:", accessToken);
+
+  // 1. Lưu token cho các request sau
+  await AsyncStorage.setItem("access_token", accessToken);
+  router.replace("/translation");
+
+  try {
+    // 2. Gọi BE để get_or_create user
+    const res = await privateApi.get("/auth/me");
+    console.log("User from backend:", res.data);
+    await AsyncStorage.setItem("user_info", JSON.stringify(res.data));
+    // Ở đây bạn có thể lưu user info vào context / store nếu muốn
+  } catch (e) {
+    console.log("Error calling /auth/me:", e);
+    // tuỳ bạn: có thể Alert, nhưng thường vẫn cho vào app để retry sau
+  }
+
+  // 3. Điều hướng vào app
+};
+
 
   return (
     <LinearGradient colors={['#ffffff', '#ffffff']} style={styles.container}>

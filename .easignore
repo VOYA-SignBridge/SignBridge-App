@@ -1,0 +1,71 @@
+# ==== VCS & IDE ====
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# ==== Node & Expo cache ====
+node_modules
+.expo
+.expo-shared
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+# ==== Android native build ====
+android/.gradle
+android/.cxx
+android/.idea
+android/local.properties
+android/app/build
+android/build
+android/app/debug
+android/app/release
+
+# ==== iOS native build ====
+ios/build
+ios/Pods
+ios/*.xcworkspace
+ios/*.xcodeproj
+
+# ==== Python / backend / venv ====
+venv
+.venv
+env
+backend/
+server/
+__pycache__/
+**/*.pyc
+
+# ==== Dataset / model files ====
+data/
+dataset/
+datasets/
+models/
+checkpoints/
+**/*.pt
+**/*.pth
+**/*.ckpt
+**/*.onnx
+**/*.h5
+**/*.zip
+**/*.tar
+**/*.tar.gz
+
+# ==== Videos / raw media ====
+raw_videos/
+videos/
+assets/raw/
+**/*.mp4
+**/*.webm
+**/*.mov
+**/*.avi
+
+# ==== Build output / temp ====
+dist/
+build/
+tmp/
+temp/
+.DS_Store
+Thumbs.db

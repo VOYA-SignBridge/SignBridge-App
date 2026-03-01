@@ -47,30 +47,30 @@ export default function QRScanner({ onScanned }: QRScannerProps) {
 
   // Có quyền rồi → hiển thị camera
   const handleScan = ({ data }: { data: string }) => {
-    // 🔥 Chặn double scan
-    if (scanned || isProcessing) {
-      console.log("Already scanned/processing, ignoring...");
-      return;
-    }
-    
-    console.log("QR scanned, calling onScanned callback");
-    setScanned(true);
-    setIsProcessing(true);
-    onScanned(data);
-  };
+  if (scanned || isProcessing) {
+    console.log("Already scanned/processing, ignoring...");
+    return;
+  }
+
+  console.log("QR scanned, calling onScanned callback");
+  setScanned(true);
+  setIsProcessing(true);
+  onScanned(data);
+};
 
   return (
     <View style={{ flex: 1 }}>
-      {!isProcessing && (
-        <CameraView
-          style={{ flex: 1 }}
-          facing="back"
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr"],
-          }}
-          onBarcodeScanned={handleScan}
-        />
-      )}
+       {!isProcessing && (
+      <CameraView
+        style={{ flex: 1 }}
+        facing="back"
+        barcodeScannerSettings={{
+          barcodeTypes: ["qr"],
+        }}
+        onBarcodeScanned={scanned || isProcessing ? undefined : handleScan}
+        // ⬆ khi scanned=true hoặc isProcessing=true, CameraView sẽ KHÔNG nhận scan nữa
+      />
+    )}
       
       {/* Hiển thị khi đã scan */}
       {isProcessing && (
