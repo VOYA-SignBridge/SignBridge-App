@@ -1,8 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/supabase';
+import { supabase } from './db/supabase';
 import { Session } from '@supabase/supabase-js';
-
 export default function EntryScreen() {
   const [session, setSession] = useState<Session | null>(null);
 
