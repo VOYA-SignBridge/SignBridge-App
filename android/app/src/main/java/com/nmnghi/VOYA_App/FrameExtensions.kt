@@ -1,6 +1,7 @@
 package com.nmnghi.VOYA_App
 
 import android.graphics.Bitmap
+<<<<<<< HEAD
 import android.graphics.Matrix
 import androidx.camera.core.ImageProxy
 import com.google.mediapipe.framework.image.BitmapImageBuilder
@@ -13,6 +14,16 @@ fun ImageProxy.toMPImage(): MPImage {
 }
 
 private fun ImageProxy.toBitmapWithRotation(): Bitmap {
+=======
+import android.graphics.BitmapFactory
+import android.graphics.ImageFormat
+import android.graphics.Rect
+import android.graphics.YuvImage
+import androidx.camera.core.ImageProxy
+import java.io.ByteArrayOutputStream
+
+fun ImageProxy.toBitmap(): Bitmap {
+>>>>>>> 5239419e80da9124bce1324507d6fd067fd08405
     val yBuffer = planes[0].buffer
     val uBuffer = planes[1].buffer
     val vBuffer = planes[2].buffer
@@ -23,11 +34,15 @@ private fun ImageProxy.toBitmapWithRotation(): Bitmap {
 
     val nv21 = ByteArray(ySize + uSize + vSize)
 
+<<<<<<< HEAD
     // copy Y, V, U vào mảng NV21
+=======
+>>>>>>> 5239419e80da9124bce1324507d6fd067fd08405
     yBuffer.get(nv21, 0, ySize)
     vBuffer.get(nv21, ySize, vSize)
     uBuffer.get(nv21, ySize + vSize, uSize)
 
+<<<<<<< HEAD
     val argb = IntArray(width * height)
     decodeYUV420SP(argb, nv21, width, height)
 
@@ -96,3 +111,11 @@ private fun decodeYUV420SP(
         j++
     }
 }
+=======
+    val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
+    val out = ByteArrayOutputStream()
+    yuvImage.compressToJpeg(Rect(0, 0, width, height), 100, out)
+    val imageBytes = out.toByteArray()
+    return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+}
+>>>>>>> 5239419e80da9124bce1324507d6fd067fd08405

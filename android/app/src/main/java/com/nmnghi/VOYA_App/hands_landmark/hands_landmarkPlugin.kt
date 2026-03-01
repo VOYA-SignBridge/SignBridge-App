@@ -1,6 +1,7 @@
 package com.nmnghi.VOYA_App.hands_landmark
 
 import android.util.Log
+<<<<<<< HEAD
 import com.google.mediapipe.framework.image.MPImage
 import com.nmnghi.VOYA_App.HandLandmarkerHolder
 import com.nmnghi.VOYA_App.toMPImage
@@ -12,10 +13,22 @@ class hands_landmarkPlugin(
     proxy: VisionCameraProxy,
     options: Map<String, Any>?
 ) : FrameProcessorPlugin() {
+=======
+import com.google.mediapipe.framework.image.BitmapImageBuilder
+import com.google.mediapipe.framework.image.MPImage
+import com.nmnghi.VOYA_App.HandLandmarkerHolder
+import com.nmnghi.VOYA_App.toBitmap 
+import com.mrousavy.camera.frameprocessors.Frame
+import com.mrousavy.camera.frameprocessors.FrameProcessorPlugin
+import androidx.camera.core.ImageProxy
+
+class hands_landmarkPlugin(proxy: com.mrousavy.camera.frameprocessors.VisionCameraProxy, options: Map<String, Any>?) : FrameProcessorPlugin() {
+>>>>>>> 5239419e80da9124bce1324507d6fd067fd08405
 
     override fun callback(frame: Frame, arguments: Map<String, Any>?): Any? {
         val landmarker = HandLandmarkerHolder.handLandmarker ?: return "not_initialized"
 
+<<<<<<< HEAD
         return try {
             val mpImage: MPImage = frame.imageProxy.toMPImage()
             val timestamp = System.currentTimeMillis()
@@ -27,3 +40,19 @@ class hands_landmarkPlugin(
         }
     }
 }
+=======
+        try {
+            // Frame của Vision Camera mặc định là ImageProxy
+            val bitmap = frame.imageProxy.toBitmap()
+            val mpImage: MPImage = BitmapImageBuilder(bitmap).build()
+            val timestamp = System.currentTimeMillis()
+
+            landmarker.detectAsync(mpImage, timestamp)
+            return "sent_to_mediapipe"
+        } catch (e: Exception) {
+            Log.e("hands_landmark", "Error processing frame", e)
+            return "error: ${e.message}"
+        }
+    }
+}
+>>>>>>> 5239419e80da9124bce1324507d6fd067fd08405
