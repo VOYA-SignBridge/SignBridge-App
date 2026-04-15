@@ -1,30 +1,38 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 
-function getLocalhost() {
-  if (Platform.OS === "web") return "localhost";
+// Hãy thay thế dòng này bằng IP thật bạn vừa tìm được ở Bước 1
+const MY_PC_IP = "192.168.1.15"; // <--- VÍ DỤ: Thay số này bằng IP máy bạn
 
-  // iOS simulator
-  if (Platform.OS === "ios" && Constants.appOwnership === "expo") {
-    const isDevice = Constants.isDevice;
-    if (!isDevice) return "192.168.1.12"; // simulator
+function getLocalhost() {
+  // Nếu là Android Emulator (Máy ảo Android Studio mặc định)
+  if (Platform.OS === "android" && !Constants.isDevice) {
+    return "10.0.2.2"; 
   }
 
-  // Android emulator
-  if (Platform.OS === "android") return "192.168.1.12";
+  // Nếu là iOS Simulator
+  if (Platform.OS === "ios" && !Constants.isDevice) {
+    return "localhost";
+  }
 
-  // iOS device thật + Android device thật → dùng LAN IP
-  const debuggerHost =
-    Constants.expoConfig?.hostUri ||
-    Constants.manifest2?.extra?.expoGo?.debuggerHost;
+  // Nếu là Device thật (cả iOS và Android) chạy qua Expo Go
+  // Logic này lấy IP của máy tính đang chạy Metro Bundler
+  const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
+  
+  if (debuggerHost) {
+    return debuggerHost.split(":").shift();
+  }
 
-  if (!debuggerHost) return "192.168.1.12"; // fallback LAN IP
-
-  return debuggerHost.split(":").shift();
+  // Fallback nếu không tự detect được
+  return MY_PC_IP;
 }
 
-
 const HOST = getLocalhost();
-  //export const API_URL = `http://${HOST}:8000`;
-export const API_URL = "https://voya-signbridge-backend.fly.dev/api/v1"
-//  export const API_URL="http://192.168.1.13:8000DJTMJGZ9"
+
+// Sử dụng dynamic HOST thay vì cứng
+//export const API_URL = `http://${HOST}:8000/api/v1`;
+//export const WS_BASE = `ws://${HOST}:8000/api/v1`;
+export const API_URL = "https://se.cit.ctu.edu.vn/signbridge/api/v1"
+export const WS_BASE = "wss://se.cit.ctu.edu.vn:8443/signbridge";
+//export const API_URL = "https://signbridgeapi.tamdevx.id.vn/api/v1";
+//export const WS_BASE = "wss://signbridgeapi.tamdevx.id.vn";

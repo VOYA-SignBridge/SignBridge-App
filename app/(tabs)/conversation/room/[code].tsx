@@ -770,6 +770,8 @@ type Participant = {
 
 export default function RoomScreen() {
   const { code, participant_id, role, display_name, wsUrl } = useLocalSearchParams();
+
+  
   const { colors: theme } = useTheme();
 
   const isDark = theme.background === '#000000' || theme.text === '#FFFFFF';
@@ -862,11 +864,21 @@ export default function RoomScreen() {
 
     const connect = async () => {
       const token = await AsyncStorage.getItem("access_token");
-
+      console.log("Connecting WS with token:", !!token, "wsUrl:", wsUrl);
       if (!token) return;
       if (socket && socket.readyState === WebSocket.OPEN) return;
 
-      socket = new WebSocket(wsUrl as string, ["jwt", token]);
+ socket = new WebSocket(
+  wsUrl as string,
+  [`jwt,${token}`]
+);
+socket.onclose = (e) => {
+  console.log("WS CLOSE", e.code, e.reason);
+};
+
+socket.onerror = (e) => {
+  console.log("WS ERROR", e);
+};
       setWs(socket);
 
       socket.onopen = () => {
@@ -908,10 +920,12 @@ export default function RoomScreen() {
         if (msg.type === "room.ended") {
           alert("Chủ phòng đã kết thúc phiên.");
           try { socket?.close(); } catch (e) { }
+          setMessages([]);
           router.replace("/conversation");
           return;
         }
       };
+      
     };
 
     connect();
@@ -922,8 +936,17 @@ export default function RoomScreen() {
   }, [wsUrl, participant_id, display_name, role]);
 
   const sendMessage = () => {
-    if (!ws || ws.readyState !== 1) return;
+ if (!ws) {
+    console.warn("[WS] no socket");
+    return;
+  }
 
+  console.log("[WS] readyState =", ws.readyState);
+
+  if (ws.readyState !== WebSocket.OPEN) {
+    console.warn("[WS] socket not open");
+    return;
+  }
     const trimmed = text.trim();
     if (!trimmed) return;
 
@@ -932,23 +955,31 @@ export default function RoomScreen() {
       text: trimmed,
       no_echo: true,
     };
+  console.log("[WS] SEND", msg);
 
     ws.send(JSON.stringify(msg));
+    
     setText("");
   };
 
   const handleLeaveRoom = async () => {
     try {
       await privateApi.post(`/rooms/${code}/leave`);
-    } catch (err) { }
+    } catch (err) {
+      console.warn("Leave room error:", err);
+     }
+    setMessages([]);
     ws?.close();
     router.replace("/conversation");
+    
   };
 
   const handleEndRoom = async () => {
     try {
       await privateApi.post(`/rooms/${code}/end`);
     } catch (err) { }
+    setMessages([]);
+    
     ws?.close();
     router.replace("/conversation");
   };

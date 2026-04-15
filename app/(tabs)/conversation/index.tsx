@@ -15,10 +15,10 @@ import {
   Keyboard
 } from "react-native";
 import { privateApi } from "@/api/privateApi";
-import { API_URL } from "@/config";
+import { API_URL, WS_BASE } from "@/config";
 import QRCode from "react-native-qrcode-svg";
 import { useTheme } from "contexts/ThemeContext";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 type CreateRoomResponse = {
   code: string;
 };
@@ -53,13 +53,13 @@ export default function ConversationScreen() {
       );
 
       const participant = res.data.participant;
-      const WS_URL = API_URL.replace("http", "ws");
-
-      const wsUrl =
-        `${WS_URL}/ws/rooms/${code}` +
-        `?participant_id=${participant.id}` +
-        `&role=${participant.role}` +
-        `&display_name=${encodeURIComponent(participant.display_name)}`;
+     // Cắt bỏ phần /api/v1 đi, chỉ lấy base URL
+const token = await AsyncStorage.getItem("access_token");
+const wsUrl =
+  `${WS_BASE}/ws/rooms/${code}` +
+  `?participant_id=${participant.id}` +
+  `&role=${participant.role}` +
+  `&display_name=${encodeURIComponent(participant.display_name)}`+`&token=${token}`;
 
       router.push({
         pathname: "/conversation/room/[code]",

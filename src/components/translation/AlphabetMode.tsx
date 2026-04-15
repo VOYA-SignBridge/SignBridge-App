@@ -81,6 +81,8 @@ export default function AlphabetMode({ onResult, theme }: Props) {
       }
     } catch (e: any) {
        // console.log("Err");
+       console.log(e.message);
+       
     } finally {
       isSending.current = false;
       setIsProcessing(false);

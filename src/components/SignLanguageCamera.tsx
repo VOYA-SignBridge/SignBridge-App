@@ -1081,6 +1081,7 @@ import {
   useCameraPermission,
   VisionCameraProxy,
   useFrameProcessor,
+  runAtTargetFps
 } from 'react-native-vision-camera';
 import { NativeModules, NativeEventEmitter } from 'react-native';
 import HandLandmarksCanvas from '@/components/HandLandmarksCanvas';
@@ -1118,6 +1119,8 @@ export default function SignLanguageCamera() {
     }
   }, [hasPermission]);
 
+
+  
   /* ========= Android FIX: wait for resume ========= */
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
@@ -1157,10 +1160,17 @@ export default function SignLanguageCamera() {
   }, []);
 
   /* ========= Frame processor ========= */
-  const frameProcessor = useFrameProcessor((frame) => {
-    'worklet';
-    plugin?.call(frame);
-  }, []);
+ const frameProcessor = useFrameProcessor((frame) => {
+  'worklet';
+
+  runAtTargetFps(5, () => {
+    if (!plugin) return;
+
+    const landmarks = plugin.call(frame);
+    // landmarks: LandmarkPoint[][]
+  });
+}, []);
+
 
   /* ========= Loading states ========= */
   if (hasPermission !== true) {
@@ -1184,6 +1194,7 @@ export default function SignLanguageCamera() {
         frameProcessor={frameProcessor}
         pixelFormat="yuv"
         resizeMode="cover"
+        isMirrored={false}
       />
 
       <HandLandmarksCanvas
