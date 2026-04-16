@@ -1,20 +1,13 @@
-// app/(tabs)/account.tsx
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Switch } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext'; // <-- Import hook
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function AccountScreen() {
-  // Lấy ra theme hiện tại, hàm toggle, và bộ màu
   const { theme, toggleTheme, colors } = useTheme();
 
   return (
-    // Dùng màu nền động
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      
-      {/* Dùng màu chữ động */}
       <Text style={[styles.text, { color: colors.text }]}>Account Screen</Text>
-
-      {/* === NÚT TOGGLE THEME === */}
       <View style={styles.row}>
         <Text style={[styles.label, { color: colors.text }]}>
           {theme === 'light' ? 'Light Mode' : 'Dark Mode'}
@@ -23,8 +16,8 @@ export default function AccountScreen() {
           trackColor={{ false: colors.mediumGray, true: colors.primary }}
           thumbColor={colors.white}
           ios_backgroundColor={colors.mediumGray}
-          onValueChange={toggleTheme} // Gọi hàm toggle
-          value={theme === 'dark'} // Giá trị switch
+          onValueChange={toggleTheme}
+          value={theme === 'dark'}
         />
       </View>
 
