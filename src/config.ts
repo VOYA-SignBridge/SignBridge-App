@@ -1,8 +1,7 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 
-// Hãy thay thế dòng này bằng IP thật bạn vừa tìm được ở Bước 1
-const MY_PC_IP = "192.168.1.15"; // <--- VÍ DỤ: Thay số này bằng IP máy bạn
+const MY_PC_IP = "192.168.1.15";
 
 function getLocalhost() {
   // Nếu là Android Emulator (Máy ảo Android Studio mặc định)

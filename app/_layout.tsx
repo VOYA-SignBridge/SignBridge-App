@@ -15,7 +15,6 @@ export default function RootLayout() {
 function ThemedRoot() {
   const { theme } = useTheme(); 
 
-  // layout BÂY GIỜ CHỈ TRẢ VỀ KHUNG APP, KHÔNG IF/ELSE NỮA
   return (
     <>
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />

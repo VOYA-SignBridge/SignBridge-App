@@ -68,7 +68,7 @@ export default function QRScanner({ onScanned }: QRScannerProps) {
           barcodeTypes: ["qr"],
         }}
         onBarcodeScanned={scanned || isProcessing ? undefined : handleScan}
-        // ⬆ khi scanned=true hoặc isProcessing=true, CameraView sẽ KHÔNG nhận scan nữa
+        //khi scanned=true hoặc isProcessing=true, CameraView sẽ KHÔNG nhận scan nữa
       />
     )}
       

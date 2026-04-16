@@ -32,7 +32,7 @@ export default function EntryScreen() {
   // KIỂM TRA DỮ LIỆU & VÙNG MIỀN
   useEffect(() => {
     const initDict = async () => {
-      // MẸO: Bạn có thể bật dòng dưới để test luồng như máy mới hoàn toàn
+      // Uncomment dòng dưới để test luồng như máy mới hoàn toàn
       // await AsyncStorage.clear(); 
 
       const savedRegion = await AsyncStorage.getItem('@user_region');

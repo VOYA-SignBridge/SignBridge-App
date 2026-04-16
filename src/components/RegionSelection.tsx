@@ -1,4 +1,3 @@
-// src/components/RegionSelection.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,7 +10,7 @@ export default function RegionSelection() {
   const handleSelect = async (selectedRegion: string) => {
     await AsyncStorage.setItem('@user_region', selectedRegion);
     setRegion(selectedRegion);
-    syncDictionary(selectedRegion); 
+    syncDictionary(selectedRegion);
   };
 
   return (
@@ -32,12 +31,55 @@ export default function RegionSelection() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 30, backgroundColor: '#fff' },
-  logo: { width: 100, height: 100, marginBottom: 20, borderRadius: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10, color: '#000' },
-  sub: { fontSize: 14, textAlign: 'center', marginBottom: 40, color: '#666' },
-  btnPrimary: { width: '100%', padding: 18, borderRadius: 15, marginBottom: 15, alignItems: 'center', backgroundColor: '#00afef' },
-  btnText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-  btnOutline: { width: '100%', padding: 18, borderRadius: 15, alignItems: 'center', borderWidth: 1, borderColor: '#00afef' },
-  btnTextOutline: { color: '#00afef', fontSize: 16, fontWeight: 'bold' }
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+    backgroundColor: '#fff',
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 20,
+    borderRadius: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#000',
+  },
+  sub: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 40,
+    color: '#666',
+  },
+  btnPrimary: {
+    width: '100%',
+    padding: 18,
+    borderRadius: 15,
+    marginBottom: 15,
+    alignItems: 'center',
+    backgroundColor: '#00afef',
+  },
+  btnText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  btnOutline: {
+    width: '100%',
+    padding: 18,
+    borderRadius: 15,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#00afef',
+  },
+  btnTextOutline: {
+    color: '#00afef',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });

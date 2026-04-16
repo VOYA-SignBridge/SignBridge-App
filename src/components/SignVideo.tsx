@@ -24,9 +24,9 @@ export function SignVideo({ url, width, height }: SignVideoProps) {
           height,
           backgroundColor: "#000",
         }}
-        player={player}          // 🔴 API ĐÚNG: dùng player, không dùng source/video
-        contentFit="contain"     // tương đương resizeMode="contain"
-        nativeControls           // = {true}
+        player={player}
+        contentFit="contain"
+        nativeControls
       />
     </View>
   );
