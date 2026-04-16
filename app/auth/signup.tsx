@@ -2,30 +2,39 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
-import { supabase } from '../db/supabase';
+import { supabase } from '../../db/supabase';
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
 
   const handleSignUp = async () => {
-    if (!email || !password || !confirm) {
-      Alert.alert('Missing fields', 'Please fill out all fields.');
+    if (!fullName || !email || !password || !confirm) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ các trường.');
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Passwords do not match');
+      Alert.alert('Mật khẩu không khớp');
       return;
     }
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
+    });
 
     if (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Lỗi', error.message);
     } else {
-      Alert.alert('Success', 'Account created! Please sign in.');
+      Alert.alert('Thành công', 'Tài khoản đã được tạo! Vui lòng đăng nhập.');
       router.replace('/auth/signin');
     }
   };
@@ -33,7 +42,15 @@ export default function SignUpScreen() {
   return (
     <LinearGradient colors={['#fff', '#fff']} style={styles.container}>
       <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
-      <Text style={styles.subtitle}>An AI-based Sign Language Translator</Text>
+      <Text style={styles.subtitle}>Vui lòng điền đầy đủ thông tin</Text>
+
+      <TextInput
+        placeholder="Họ và tên"
+        placeholderTextColor="#ccc"
+        style={styles.input}
+        value={fullName}
+        onChangeText={setFullName}
+      />
 
       <TextInput
         placeholder="Email"
@@ -44,7 +61,7 @@ export default function SignUpScreen() {
         autoCapitalize="none"
       />
       <TextInput
-        placeholder="Password"
+        placeholder="Mật khẩu"
         placeholderTextColor="#ccc"
         style={styles.input}
         value={password}
@@ -52,7 +69,7 @@ export default function SignUpScreen() {
         secureTextEntry
       />
       <TextInput
-        placeholder="Confirm Password"
+        placeholder="Xác nhận mật khẩu"
         placeholderTextColor="#ccc"
         style={styles.input}
         value={confirm}
@@ -61,12 +78,14 @@ export default function SignUpScreen() {
       />
 
       <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-        <Text style={styles.buttonText}>Sign Up</Text>
+        <Text style={styles.buttonText}>Đăng ký</Text>
       </TouchableOpacity>
 
       <Link href="/auth/signin" asChild>
         <TouchableOpacity>
-          <Text style={styles.link}>Already have an account? Sign In</Text>
+          <Text style={styles.link}>
+            Bạn đã có tài khoản? <Text style={styles.boldText}>Đăng nhập</Text>
+          </Text>
         </TouchableOpacity>
       </Link>
     </LinearGradient>
@@ -74,14 +93,23 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  logo: { height: 180, width: 180, marginBottom: 16 },
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24
+  },
+  logo: {
+    height: 180,
+    width: 180,
+    marginBottom: 16
+  },
   subtitle: {
     color: '#00afef',
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 32
   },
   input: {
     width: '100%',
@@ -90,7 +118,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     color: '#00afef',
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 12
   },
   button: {
     backgroundColor: '#1f5ca9',
@@ -98,8 +126,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     width: '100%',
-    marginTop: 8,
+    marginTop: 8
   },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  link: { color: '#00afef', marginTop: 16 },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16
+  },
+  link: {
+    color: '#00afef',
+    marginTop: 16
+  },
+  boldText: {
+    fontWeight: 'bold'
+  }
 });
