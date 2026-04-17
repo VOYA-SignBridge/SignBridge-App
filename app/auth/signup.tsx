@@ -11,8 +11,10 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
 
+  const isFormValid = fullName.trim() !== '' && email.trim() !== '' && password !== '' && confirm !== '';
+
   const handleSignUp = async () => {
-    if (!fullName || !email || !password || !confirm) {
+    if (!isFormValid) {
       Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ các trường.');
       return;
     }
@@ -77,7 +79,11 @@ export default function SignUpScreen() {
         secureTextEntry
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+      <TouchableOpacity 
+        style={[styles.button, !isFormValid && styles.buttonDisabled]} 
+        onPress={handleSignUp}
+        disabled={!isFormValid}
+      >
         <Text style={styles.buttonText}>Đăng ký</Text>
       </TouchableOpacity>
 
@@ -100,16 +106,15 @@ const styles = StyleSheet.create({
     padding: 24
   },
   logo: {
-    height: 180,
-    width: 180,
-    marginBottom: 16
+    height: 200,
+    width: 200,
+    marginBottom: 3
   },
   subtitle: {
-    color: '#00afef',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: 'grey',
+    fontSize: 14,
     textAlign: 'center',
-    marginBottom: 32
+    marginBottom: 23
   },
   input: {
     width: '100%',
@@ -128,6 +133,9 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 8
   },
+  buttonDisabled: {
+    backgroundColor: '#a0bce0'
+  },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
@@ -135,7 +143,8 @@ const styles = StyleSheet.create({
   },
   link: {
     color: '#00afef',
-    marginTop: 16
+    marginTop: 16,
+    fontSize: 14,
   },
   boldText: {
     fontWeight: 'bold'

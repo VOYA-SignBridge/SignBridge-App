@@ -20,15 +20,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDictionaryStore } from '../data/useDictionaryStore';
 import { syncDictionary } from '../data/DictionaryService';
 import { APP_LANGUAGES, SIGN_LANGUAGES } from '../data/languages';
+import { supabase } from '../../db/supabase';
 
 type User = {
-  created_at: string;
   email: string;
   full_name: string;
-  hashed_password?: string;
-  id: number;
-  role: string;
-  supabase_id: string;
 };
 
 export default function AccountScreen() {
@@ -44,16 +40,26 @@ export default function AccountScreen() {
 
   const setRegion = useDictionaryStore(state => state.setRegion);
   const currentRegion = useDictionaryStore(state => state.region);
-
   const [appLangValue, setAppLangValue] = useState('Vietnamese');
 
   useEffect(() => {
-    (async () => {
-      const stored = await AsyncStorage.getItem("user_info");
-      if (stored) {
-        setUser(JSON.parse(stored));
+    const fetchUser = async () => {
+      const { data: { user: authUser }, error } = await supabase.auth.getUser();
+      
+      if (error) {
+        console.log("Loi lay thong tin user: " + error.message);
+        return;
       }
-    })();
+
+      if (authUser) {
+        setUser({
+          full_name: authUser.user_metadata?.full_name || "Người dùng",
+          email: authUser.email || ""
+        });
+      }
+    };
+
+    fetchUser();
   }, []);
 
   const handleSignLangChange = async (item: { label: string, value: string }) => {
@@ -80,8 +86,9 @@ export default function AccountScreen() {
     console.log("--- KET THUC THAY DOI VUNG MIEN ---");
   };
 
-  const handleLogout = () => {
-    AsyncStorage.clear();
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    await AsyncStorage.clear();
     router.replace('/auth/signin');
   };
 
@@ -112,7 +119,6 @@ export default function AccountScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        
         <View style={styles.brandHeader}>
             <Text style={[
               styles.brandTitle,
@@ -139,7 +145,7 @@ export default function AccountScreen() {
               color: colors.text
             }
           ]}>
-            {user?.full_name || "User Name"}
+            {user?.full_name}
           </Text>
           <Text style={[
             styles.profileEmail,
@@ -147,7 +153,7 @@ export default function AccountScreen() {
               color: colors.icon
             }
           ]}>
-            {user?.email || "email@example.com"}
+            {user?.email}
           </Text>
         </View>
 
@@ -157,7 +163,6 @@ export default function AccountScreen() {
             backgroundColor: theme === 'dark' ? colors.controlBG : '#fff'
           }
         ]}>
-          
           <View style={[
             styles.settingRow,
             {

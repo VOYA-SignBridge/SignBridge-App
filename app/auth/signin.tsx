@@ -11,8 +11,10 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const isFormValid = email.trim() !== '' && password !== '';
+
   const handleSignIn = async () => {
-    if (!email || !password) {
+    if (!isFormValid) {
       Alert.alert("Thiếu thông tin", "Vui lòng nhập email và mật khẩu.");
       return;
     }
@@ -69,7 +71,11 @@ export default function SignInScreen() {
         onChangeText={setPassword}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleSignIn}>
+      <TouchableOpacity 
+        style={[styles.button, !isFormValid && styles.buttonDisabled]} 
+        onPress={handleSignIn}
+        disabled={!isFormValid}
+      >
         <Text style={styles.buttonText}>Đăng nhập</Text>
       </TouchableOpacity>
 
@@ -92,16 +98,15 @@ const styles = StyleSheet.create({
     padding: 24
   },
   logo: {
-    height: 180,
-    width: 180,
-    marginBottom: 16
+    height: 200,
+    width: 200,
+    marginBottom: 3
   },
   subtitle: {
-    color: '#00afef',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: 'grey',
+    fontSize: 14,
     textAlign: 'center',
-    marginBottom: 32
+    marginBottom: 23
   },
   input: {
     width: '100%',
@@ -119,6 +124,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     marginTop: 8
+  },
+  buttonDisabled: {
+    backgroundColor: '#a0bce0'
   },
   buttonText: {
     color: '#fff',

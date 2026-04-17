@@ -1,494 +1,417 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet,
-  Text,
   View,
-  Switch,
+  Text,
   TouchableOpacity,
-  Image,
-  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
-  Alert,
-  ActivityIndicator,
-  Modal
+  Keyboard,
+  Alert
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Dropdown } from 'react-native-element-dropdown';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import SignLanguageCamera from '@/components/SignLanguageCamera';
+import WordMode from '@/components/translation/WordMode';
+import AlphabetMode from '@/components/translation/AlphabetMode';
 import { useDictionaryStore } from '../data/useDictionaryStore';
-import { syncDictionary } from '../data/DictionaryService';
-import { APP_LANGUAGES, SIGN_LANGUAGES } from '../data/languages';
-import { supabase } from '../../db/supabase';
+import { getSignVideoUrl } from '../utils/CloudinaryHelper';
 
-type User = {
-  email: string;
-  full_name: string;
-};
+export default function TranslationScreen() {
+  const { colors: theme } = useTheme();
 
-export default function AccountScreen() {
-  const {
-    theme,
-    toggleTheme,
-    colors
-  } = useTheme();
-  
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [mode, setMode] = useState<'word' | 'letter'>('word');
+  const [textInput, setTextInput] = useState("");
+  const [translatedText, setTranslatedText] = useState(""); 
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
-  const setRegion = useDictionaryStore(state => state.setRegion);
-  const currentRegion = useDictionaryStore(state => state.region);
-  const [appLangValue, setAppLangValue] = useState('Vietnamese');
+  const findWord = useDictionaryStore((state) => state.findWord);
+  const isReady = useDictionaryStore((state) => state.isReady);
+  const dictionaryData = useDictionaryStore((state) => state.data);
+
+  const player = useVideoPlayer(videoUrl, (player) => {
+    player.loop = false;
+    if (videoUrl) {
+      player.play();
+    }
+  });
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user: authUser }, error } = await supabase.auth.getUser();
-      
-      if (error) {
-        console.log("Loi lay thong tin user: " + error.message);
-        return;
-      }
-
-      if (authUser) {
-        setUser({
-          full_name: authUser.user_metadata?.full_name || "Người dùng",
-          email: authUser.email || ""
-        });
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  const handleSignLangChange = async (item: { label: string, value: string }) => {
-    console.log("--- BAT DAU THAY DOI VUNG MIEN ---");
-    console.log("Vung moi chon: " + item.value);
-
-    setIsDownloading(true);
-
-    try {
-      await AsyncStorage.setItem('@user_region', item.value);
-      setRegion(item.value);
-      
-      console.log("Dang goi syncDictionary cho vung: " + item.value);
-      await syncDictionary(item.value);
-      
-      console.log("Thay doi vung mien va tai du lieu thanh cong");
-      Alert.alert("Thành công", "Đã chuyển sang bộ từ điển " + item.label);
-    } catch (error) {
-      console.log("Loi khi thay doi vung mien: " + error);
-      Alert.alert("Lỗi", "Không thể tải bộ từ điển mới");
-    } finally {
-      setIsDownloading(false);
+    if (videoUrl && player) {
+      player.play();
     }
-    console.log("--- KET THUC THAY DOI VUNG MIEN ---");
+  }, [videoUrl, player]);
+
+  useEffect(() => {
+    setTranslatedText("");
+  }, [showCamera, mode]);
+
+  const handleWordResult = (newWord: string) => {
+    setTranslatedText(prev => {
+      const words = prev.trim().split(' ');
+      if (words.length > 0 && words[words.length - 1].toLowerCase() === newWord.toLowerCase()) return prev;
+      return prev ? `${prev} ${newWord}` : newWord;
+    });
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    await AsyncStorage.clear();
-    router.replace('/auth/signin');
+  const handleLetterResult = (newChar: string) => {
+    setTranslatedText(prev => prev + newChar);
   };
+
+  const closeCamera = () => {
+    setShowCamera(false);
+    setTranslatedText("");
+  };
+
+  async function translateTextToVideo() {
+    if (!textInput.trim()) return;
+    Keyboard.dismiss();
+
+    console.log(`\n--- BAT DAU TIM KIEM ---`);
+    console.log(`- Noi dung nhap: "${textInput}"`);
+    console.log(`- Trang thai RAM: ${isReady ? "Da san sang" : "Chua co du lieu"}`);
+    console.log(`- So luong tu hien co: ${Object.keys(dictionaryData).length}`);
+
+    const publicId = findWord(textInput);
+
+    if (publicId) {
+      console.log(`Tim thay public_id: ${publicId}`);
+      const url = getSignVideoUrl(publicId);
+      console.log(`Video URL: ${url}`);
+      setVideoUrl(url);
+    } else {
+      console.log(`Khong tim thay du lieu cho tu: "${textInput}"`);
+      console.log(`Mau Keys hien co:`, Object.keys(dictionaryData).slice(0, 3));
+      
+      Alert.alert("Chua co du lieu", `Tu "${textInput}" hien chua co trong tu dien cua SignBridge.`);
+      setVideoUrl(null);
+    }
+    console.log(`--- KET THUC TÌM KIEM ---\n`);
+  }
+
+  const hasText = textInput.trim().length > 0;
+  const inputBackgroundColor = theme.background === '#000000' ? '#1c1c1e' : '#F2F2F7';
+
+  if (showCamera) {
+    return (
+      <View style={{ flex: 1, backgroundColor: 'black' }}>
+        <SignLanguageCamera 
+          theme={theme} 
+          onClose={closeCamera}
+          onTranslationUpdate={handleWordResult}
+        />
+        
+        <TouchableOpacity style={styles.closeBtn} onPress={closeCamera}>
+          <Ionicons name="close" size={28} color="#ffffff" />
+        </TouchableOpacity>
+        
+        <View style={styles.modeSwitchContainer}>
+          <View style={styles.modeSwitchBackground}>
+            <TouchableOpacity 
+              style={[
+                styles.modeBtn, 
+                mode === 'word' && { backgroundColor: theme.primary }
+              ]}
+              onPress={() => setMode('word')}
+            >
+              <Text style={[
+                styles.modeText, 
+                mode === 'word' && styles.modeTextActive
+              ]}>Từ vựng</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[
+                styles.modeBtn, 
+                mode === 'letter' && { backgroundColor: theme.primary }
+              ]}
+              onPress={() => setMode('letter')}
+            >
+              <Text style={[
+                styles.modeText, 
+                mode === 'letter' && styles.modeTextActive
+              ]}>Chữ cái</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {mode === 'word' && (
+          <View style={[styles.cameraResultBox, { borderColor: 'rgba(255,255,255,0.1)' }]}>
+            <Text style={[styles.cameraResultLabel, { color: theme.primary }]}>Kết quả dịch:</Text>
+            <Text style={styles.cameraResultText}>
+              {translatedText || "..."}
+            </Text>
+            {translatedText.length > 0 && (
+              <TouchableOpacity onPress={() => setTranslatedText("")} style={styles.clearBtn}>
+                <Text style={styles.clearBtnText}>Xóa</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        <View style={styles.controlLayer}>
+          {mode === 'word' ? (
+            <WordMode onResult={handleWordResult} theme={theme} />
+          ) : (
+            <AlphabetMode onResult={handleLetterResult} theme={theme} />
+          )}
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={[
-      styles.container,
-      {
-        backgroundColor: colors.background
-      }
-    ]}>
-      <Modal
-        transparent={true}
-        animationType="fade"
-        visible={isDownloading}
-      >
-        <View style={styles.loadingOverlay}>
-          <View style={styles.loadingBox}>
-            <ActivityIndicator
-              size="large"
-              color={colors.primary}
-            />
-            <Text style={styles.loadingText}>Đang tải dữ liệu ký hiệu...</Text>
+    <SafeAreaView style={[styles.mainContainer, { backgroundColor: theme.background }]}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.contentContainer}>
+            {videoUrl ? (
+              <View style={styles.mediaContainer}>
+                <VideoView 
+                  style={styles.videoPlayer} 
+                  player={player} 
+                  contentFit="contain" 
+                  allowsPictureInPicture 
+                />
+              </View>
+            ) : (
+              <View style={[
+                styles.mediaContainer, 
+                styles.placeholderBox, 
+                { borderColor: theme.lightGray, backgroundColor: theme.controlBG }
+              ]}>
+                <Ionicons 
+                  name="videocam-outline" 
+                  size={48} 
+                  color={theme.icon} 
+                  style={{ opacity: 0.5, marginBottom: 16 }} 
+                />
+                <Text style={[styles.welcomeText, { color: theme.text }]}>Xin chào!</Text>
+                <Text style={[styles.subText, { color: theme.icon }]}>
+                  {"Nhập văn bản để tôi dịch sang\nngôn ngữ ký hiệu nhé."}
+                </Text>
+              </View>
+            )}
           </View>
-        </View>
-      </Modal>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.brandHeader}>
-            <Text style={[
-              styles.brandTitle,
-              {
-                color: colors.text2
-              }
-            ]}>SignBridge</Text>
-            <Text style={styles.brandSubtitle}>by CTU & CSIRO</Text>
-        </View>
-
-        <View style={styles.profileSection}>
-          <Image 
-            source={require('../../assets/images/default.jpg')} 
-            style={[
-              styles.avatar,
-              {
-                borderColor: colors.primary
-              }
-            ]}
-          />
-          <Text style={[
-            styles.profileName,
-            {
-              color: colors.text
-            }
-          ]}>
-            {user?.full_name}
-          </Text>
-          <Text style={[
-            styles.profileEmail,
-            {
-              color: colors.icon
-            }
-          ]}>
-            {user?.email}
-          </Text>
-        </View>
+        </TouchableWithoutFeedback>
 
         <View style={[
-          styles.settingsGroup,
-          {
-            backgroundColor: theme === 'dark' ? colors.controlBG : '#fff'
-          }
+          styles.bottomBarContainer, 
+          { backgroundColor: theme.background, borderTopColor: 'transparent' }
         ]}>
-          <View style={[
-            styles.settingRow,
-            {
-              borderBottomColor: colors.lightGray
-            }
-          ]}>
-            <View style={styles.rowLabel}>
-              <View style={[
-                styles.iconBox,
-                {
-                  backgroundColor: theme === 'dark' ? '#333' : '#F5F5F5'
-                }
-              ]}>
-                <Ionicons
-                  name="language"
-                  size={20}
-                  color={colors.text}
-                />
-              </View>
-              <Text style={[
-                styles.rowText,
-                {
-                  color: colors.text
-                }
-              ]}>Ngôn ngữ ứng dụng</Text>
-            </View>
-            <Dropdown
-              style={styles.dropdown}
-              selectedTextStyle={[
-                styles.selectedTextStyle,
-                {
-                  color: colors.text
-                }
-              ]}
-              data={APP_LANGUAGES}
-              maxHeight={300}
-              labelField="label"
-              valueField="value"
-              placeholder="Chọn..."
-              placeholderStyle={{
-                color: colors.icon,
-                fontSize: 14,
-                textAlign: 'right',
-                marginRight: 8
-              }}
-              value={appLangValue}
-              onChange={item => setAppLangValue(item.value)}
-              renderRightIcon={() => (
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={colors.icon}
-                />
-              )}
+          <TouchableOpacity onPress={() => setShowCamera(true)} style={styles.iconBtnOutside}>
+            <Ionicons name="camera" size={22} color={theme.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconBtnOutside}>
+            <Ionicons name="mic" size={22} color={theme.primary} />
+          </TouchableOpacity>
+          
+          <View style={[styles.inputWrapper, { backgroundColor: inputBackgroundColor }]}>
+            <TextInput
+              style={[styles.textInput, { color: theme.text }]}
+              placeholder="Nhập nội dung..."
+              placeholderTextColor={theme.icon}
+              value={textInput}
+              onChangeText={setTextInput}
+              onSubmitEditing={translateTextToVideo}
+              returnKeyType="send"
+              autoCorrect={false}
+              spellCheck={false}
+              autoCapitalize="none"
             />
           </View>
-
-          <View style={[
-            styles.settingRow,
-            {
-              borderBottomColor: colors.lightGray
-            }
-          ]}>
-            <View style={styles.rowLabel}>
-              <View style={[
-                styles.iconBox,
-                {
-                  backgroundColor: theme === 'dark' ? '#333' : '#F5F5F5'
-                }
-              ]}>
-                <Ionicons
-                  name="hand-right"
-                  size={20}
-                  color={colors.text}
-                />
-              </View>
-              <Text style={[
-                styles.rowText,
-                {
-                  color: colors.text
-                }
-              ]}>Ngôn ngữ ký hiệu</Text>
-            </View>
-            <Dropdown
-              style={styles.dropdown}
-              selectedTextStyle={[
-                styles.selectedTextStyle,
-                {
-                  color: colors.text
-                }
-              ]}
-              data={SIGN_LANGUAGES}
-              maxHeight={300}
-              labelField="label"
-              valueField="value"
-              placeholder="Chọn..."
-              placeholderStyle={{
-                color: colors.icon,
-                fontSize: 14,
-                textAlign: 'right',
-                marginRight: 8
-              }}
-              value={currentRegion}
-              onChange={handleSignLangChange}
-              renderRightIcon={() => (
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={colors.icon}
-                />
-              )}
+          
+          <TouchableOpacity 
+            onPress={translateTextToVideo} 
+            disabled={!hasText} 
+            style={[
+              styles.sendButton, 
+              { 
+                backgroundColor: hasText ? theme.primary : inputBackgroundColor, 
+                elevation: hasText ? 5 : 0 
+              }
+            ]}
+          >
+            <Ionicons 
+              name="send" 
+              size={20} 
+              color={hasText ? theme.white : theme.icon} 
+              style={{ marginLeft: hasText ? 2 : 0 }} 
             />
-          </View>
-
-           <View style={styles.settingRow}>
-            <View style={styles.rowLabel}>
-              <View style={[
-                styles.iconBox,
-                {
-                  backgroundColor: theme === 'dark' ? '#333' : '#F5F5F5'
-                }
-              ]}>
-                <Ionicons
-                  name={theme === 'dark' ? "moon" : "sunny"}
-                  size={20}
-                  color={colors.text}
-                />
-              </View>
-              <Text style={[
-                styles.rowText,
-                {
-                  color: colors.text
-                }
-              ]}>Giao diện tối</Text>
-            </View>
-            <Switch
-              trackColor={{
-                false: '#e0e0e0',
-                true: colors.primary
-              }}
-              thumbColor={'#fff'}
-              onValueChange={toggleTheme}
-              value={theme === 'dark'}
-            />
-          </View>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          onPress={handleLogout}
-          activeOpacity={0.7}
-          style={[
-            styles.logoutButton,
-            {
-              backgroundColor: colors.primary
-            }
-          ]}
-        >
-          <Ionicons
-            name="log-out-outline"
-            size={20}
-            color="#fff"
-          />
-          <Text style={styles.logoutText}>Đăng xuất</Text>
-        </TouchableOpacity>
-
-        <Text style={[
-          styles.versionText,
-          {
-            color: colors.icon
-          }
-        ]}>Phiên bản 1.0.0</Text>
-        <View style={{
-          height: 40
-        }} />
-      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1
   },
-  scrollContent: {
-    padding: 20
-  },
-  loadingOverlay: {
+  contentContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 40
+  },
+  mediaContainer: {
+    width: '90%',
+    aspectRatio: 3 / 4,
     justifyContent: 'center',
     alignItems: 'center'
   },
-  loadingBox: {
-    backgroundColor: '#fff',
-    padding: 25,
-    borderRadius: 15,
-    alignItems: 'center',
-    width: '80%'
+  videoPlayer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'transparent'
   },
-  loadingText: {
-    marginTop: 15,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333'
-  },
-  brandHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'center',
-    marginBottom: 25,
-    marginTop: 40
-  },
-  brandTitle: {
-    fontSize: 24,
-    fontWeight: '800'
-  },
-  brandSubtitle: {
-    fontSize: 18,
-    color: '#888',
-    fontWeight: '600',
-    marginLeft: 8
-  },
-  profileSection: {
-    alignItems: 'center',
-    marginBottom: 20
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  placeholderBox: {
     borderWidth: 2,
-    marginBottom: 12
+    borderStyle: 'dashed',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24
   },
-  profileName: {
+  welcomeText: {
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 4
-  },
-  profileEmail: {
-    fontSize: 15,
     marginBottom: 8
   },
-  roleBadge: {
+  subText: {
+    fontSize: 15,
+    textAlign: 'center'
+  },
+  bottomBarContainer: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 4
-  },
-  roleText: {
-    fontSize: 12,
-    fontWeight: '600'
-  },
-  sectionHeader: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 10,
-    marginLeft: 10,
-    opacity: 0.6
-  },
-  settingsGroup: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 30,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2
-  },
-  settingRow: {
+    paddingVertical: 10,
+    borderTopWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'transparent'
+    paddingBottom: Platform.OS === 'ios' ? 20 : 12
   },
-  rowLabel: {
+  iconBtnOutside: {
+    padding: 6,
+    marginRight: 2
+  },
+  inputWrapper: {
+    flex: 1,
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    height: 44,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    marginRight: 8,
+    marginLeft: 4,
+    borderWidth: 0
   },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  textInput: {
+    flex: 1,
+    fontSize: 16,
+    height: '100%'
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14
+    shadowOffset: {
+      width: 0,
+      height: 3
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4
   },
-  rowText: {
-    fontSize: 16,
-    fontWeight: '500'
+  closeBtn: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)'
   },
-  dropdown: {
-    width: 150,
-    height: 30,
+  modeSwitchContainer: {
+    position: 'absolute',
+    top: 60,
+    width: '100%',
+    alignItems: 'center',
+    zIndex: 20
+  },
+  modeSwitchBackground: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 25,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)'
+  },
+  modeBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 20
+  },
+  modeText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '600',
+    fontSize: 14
+  },
+  modeTextActive: {
+    color: 'white',
+    fontWeight: 'bold'
+  },
+  controlLayer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '40%',
     justifyContent: 'flex-end',
-    alignItems: 'center'
+    paddingBottom: 40,
+    zIndex: 10
   },
-  selectedTextStyle: {
-    fontSize: 14,
-    textAlign: 'right',
-    marginRight: 8,
-    fontWeight: '500'
+  cameraResultBox: {
+    position: 'absolute',
+    top: 130,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 16,
+    borderRadius: 12,
+    zIndex: 15,
+    borderWidth: 1
   },
-  logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: 30,
-    marginBottom: 15,
-    marginTop: 10
+  cameraResultLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 4
   },
-  logoutText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8
+  cameraResultText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: '700'
   },
-  versionText: {
-    textAlign: 'center',
-    fontSize: 12
+  clearBtn: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    padding: 5
+  },
+  clearBtnText: {
+    color: '#F87171',
+    fontSize: 12,
+    fontWeight: 'bold'
   }
 });
