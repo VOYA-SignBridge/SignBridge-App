@@ -49,8 +49,8 @@ export const syncDictionary = async (region: string) => {
         dictionaryData = parsed.data || parsed; 
         console.log(`[5] Nạp thành công ${Object.keys(dictionaryData).length} từ lên RAM.`);
       }
-    } catch (e) {
-      console.log(`[5] Lỗi đọc file JSON: ${e.message}`);
+    } catch (error) {
+      console.log(`[5] Lỗi đọc file JSON: ${error.message}`);
     }
     
     useDictionaryStore.getState().setDictionary(dictionaryData);

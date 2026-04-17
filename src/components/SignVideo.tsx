@@ -11,9 +11,7 @@ type SignVideoProps = {
 
 export function SignVideo({ url, width, height }: SignVideoProps) {
   const player = useVideoPlayer(url, (player) => {
-    // cấu hình ban đầu
-    player.loop = true;   // lặp lại
-    // mặc định: không auto play, user tự bấm
+    player.loop = true;
   });
 
   return (
