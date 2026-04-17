@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDictionaryStore } from './useDictionaryStore';
+import { API_URL } from '../../src/config';
 
 export const syncDictionary = async (region: string) => {
   console.log(`\n=== BẮT ĐẦU ĐỒNG BỘ [Vùng: ${region}] ===`);
@@ -13,10 +14,10 @@ export const syncDictionary = async (region: string) => {
     const localVersion = localVersionStr ? parseInt(localVersionStr) : 0;
     console.log(`[1] Phiên bản máy hiện tại: ${localVersion}`);
 
-    const API_URL = `https://se.cit.ctu.edu.vn/signbridge/api/v1/admin/check-version/${region}`;
-    console.log(`[2] Đang gọi API: ${API_URL}`);
+    const checkVersionUrl = `${API_URL}/admin/check-version/${region}`;
+    console.log(`[2] Đang gọi API: ${checkVersionUrl}`);
     
-    const response = await fetch(API_URL);
+    const response = await fetch(checkVersionUrl);
     
     if (response.ok) {
       const server = await response.json();
