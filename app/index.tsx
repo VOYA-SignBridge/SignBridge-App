@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { supabase } from '../db/supabase'; 
+import { supabase } from '../app/db/supabase'; 
 import { useDictionaryStore } from '../app/data/useDictionaryStore';
 import { syncDictionary } from '../app/data/DictionaryService';
 

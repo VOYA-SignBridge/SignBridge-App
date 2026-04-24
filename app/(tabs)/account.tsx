@@ -20,7 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDictionaryStore } from '../data/useDictionaryStore';
 import { syncDictionary } from '../data/DictionaryService';
 import { APP_LANGUAGES, SIGN_LANGUAGES } from '../data/languages';
-import { supabase } from '../../db/supabase';
+import { supabase } from '../db/supabase';
 
 type User = {
   email: string;

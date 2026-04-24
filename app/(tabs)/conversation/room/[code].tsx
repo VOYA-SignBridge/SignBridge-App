@@ -24,6 +24,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from 'contexts/ThemeContext';
 import AlphabetMode from "@/components/translation/AlphabetMode";
 import WordMode from "@/components/translation/WordMode";
+import { useDictionaryStore } from "../../../data/useDictionaryStore";
+import { getSignVideoUrl } from "../../../utils/CloudinaryHelper";
 
 type Participant = {
   participant_id: number;
@@ -54,7 +56,10 @@ export default function RoomScreen() {
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [translatedText, setTranslatedText] = useState(""); 
   const chatInputRef = useRef<TextInput>(null);
+  const wsRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wsRetryCountRef = useRef(0);
   const isOwner = Boolean(roomInfo && userInfo && String(roomInfo.owner_id) === String(userInfo.id));
+  const findWord = useDictionaryStore((state) => state.findWord);
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -126,6 +131,7 @@ export default function RoomScreen() {
 
   useEffect(() => {
     let socket: WebSocket | null = null;
+    const maxRetries = 2;
 
     const connect = async () => {
       const token = await AsyncStorage.getItem("access_token");
@@ -139,6 +145,12 @@ export default function RoomScreen() {
 );
 socket.onclose = (e) => {
   console.log("WS CLOSE", e.code, e.reason);
+  if (e.code === 1006 && wsRetryCountRef.current < maxRetries) {
+    wsRetryCountRef.current += 1;
+    wsRetryTimerRef.current = setTimeout(() => {
+      connect();
+    }, 500);
+  }
 };
 
 socket.onerror = (e) => {
@@ -196,6 +208,10 @@ socket.onerror = (e) => {
     connect();
 
     return () => {
+      if (wsRetryTimerRef.current) {
+        clearTimeout(wsRetryTimerRef.current);
+        wsRetryTimerRef.current = null;
+      }
       if (socket) socket.close();
     };
   }, [wsUrl, participant_id, display_name, role]);
@@ -352,6 +368,9 @@ socket.onerror = (e) => {
           renderItem={({ item }) => {
             const sender = item.sender || {};
             const isMe = String(sender.participant_id) === String(participant_id);
+            const fallbackPublicId = findWord(item.text || "");
+            const fallbackVideoUrl = getSignVideoUrl(fallbackPublicId);
+            const hasServerVideos = Array.isArray(item.videos) && item.videos.length > 0;
 
             return (
               <View style={[styles.messageRow, isMe ? styles.rowRight : styles.rowLeft]}>
@@ -376,7 +395,7 @@ socket.onerror = (e) => {
                     {item.text}
                   </Text>
 
-                  {Array.isArray(item.videos) && item.videos.length > 0 && (
+                  {hasServerVideos && (
                     <View style={styles.videoGrid}>
                       {item.videos.map((v: any, idx: number) => (
                         <View key={`${v.sign_id}-${idx}`} style={styles.videoWrapper}>
@@ -388,6 +407,18 @@ socket.onerror = (e) => {
                           />
                         </View>
                       ))}
+                    </View>
+                  )}
+
+                  {!hasServerVideos && fallbackVideoUrl && (
+                    <View style={styles.videoGrid}>
+                      <View style={styles.videoWrapper}>
+                        <SignVideo
+                          url={fallbackVideoUrl}
+                          width={VIDEO_WIDTH}
+                          height={VIDEO_HEIGHT}
+                        />
+                      </View>
                     </View>
                   )}
 

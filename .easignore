@@ -39,7 +39,6 @@ __pycache__/
 **/*.pyc
 
 # ==== Dataset / model files ====
-data/
 dataset/
 datasets/
 models/
