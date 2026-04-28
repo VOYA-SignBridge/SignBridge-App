@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "VOYA_App",
+    "name": "SignBridge",
     "slug": "VOYA_App",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.jpg",
-    "scheme": "voyaapp",
+    "icon": "./assets/images/logo.png",
+    "scheme": "signbridge",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "react": {
@@ -14,8 +14,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow VOYA_App to access your camera",
-        "NSMicrophoneUsageDescription": "Allow VOYA_App to access your microphone"
+        "NSCameraUsageDescription": "Allow SignBridge to access your camera",
+        "NSMicrophoneUsageDescription": "Allow SignBridge to access your microphone"
       }
     },
     "android": {
@@ -44,8 +44,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/logo.png",
-          "imageWidth": 200,
+          "image": "./assets/images/icon.jpg",
+          "imageWidth": 320,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {

@@ -3,9 +3,18 @@ import { View, Text, TouchableOpacity, StyleSheet, NativeEventEmitter, NativeMod
 import { privateApi } from '@/api/privateApi';
 import { Ionicons } from '@expo/vector-icons';
 
-const SEQ_LEN = 48;
+const SEQ_LEN = 24;
 const MIN_CONFIDENCE = 0.55;
-
+const LABEL_TO_VI: Record<string, string> = {
+  hello: 'xin chào',
+  'thank-you': 'cảm ơn',
+  thankyou: 'cảm ơn',
+  'thank you': 'cảm ơn',
+};
+const normalizeLabel = (label: string) => {
+  const key = label.trim().toLowerCase();
+  return LABEL_TO_VI[key] || label;
+};
 const { HandLandmarks } = NativeModules;
 const eventEmitter = new NativeEventEmitter(HandLandmarks);
 
@@ -114,7 +123,7 @@ export default function WordMode({ onResult, theme }: Props) {
       const res = await privateApi.post('/ai/tcn-recognize', { frames });
       const data = res.data;
       if (data.label && data.probability >= MIN_CONFIDENCE) {
-        onResult(data.label);
+        onResult(normalizeLabel(data.label));
         setStatusMsg(`Xong!`);
       } else {
         setStatusMsg("Không rõ");

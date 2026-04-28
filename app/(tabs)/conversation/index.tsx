@@ -116,13 +116,13 @@ const wsUrl =
       );
 
       const participant = res.data.participant;
-      const WS_URL = API_URL.replace("http", "ws");
-
+      const token = await AsyncStorage.getItem("access_token");
       const wsUrl =
-        `${WS_URL}/ws/rooms/${code}` +
+        `${WS_BASE}/ws/rooms/${code}` +
         `?participant_id=${participant.id}` +
         `&role=${participant.role}` +
-        `&display_name=${encodeURIComponent(participant.display_name)}`;
+        `&display_name=${encodeURIComponent(participant.display_name)}` +
+        `&token=${token}`;
 
       setShowScanner(false);
 
