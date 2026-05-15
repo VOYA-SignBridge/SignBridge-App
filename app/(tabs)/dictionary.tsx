@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  FlatList, 
-  TextInput, 
-  TouchableOpacity, 
+import React, { useState, useCallback, useMemo } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
   Platform,
   Keyboard,
   ScrollView,
-  SafeAreaView
+  InteractionManager,
 } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useVideoPlayer, VideoView } from 'expo-video';
 const moetData = [
@@ -21840,41 +21842,19 @@ export default function AvatarScreen() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWord, setSelectedWord] = useState<DictionaryItem | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-
   const [showFilters, setShowFilters] = useState(false);
   const [filterRegion, setFilterRegion] = useState<RegionFilter>('Tất cả');
   const [sortOrder, setSortOrder] = useState<SortOrder>('AZ');
+  const [isFocused, setIsFocused] = useState(false);
 
-  const player = useVideoPlayer(null, (player) => {
-    player.loop = true;
-  });
+  const videoUrl = selectedWord?.videoUrl ?? null;
 
-  useEffect(() => {
-    if (videoUrl) {
-      const source = { 
-        uri: videoUrl,
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Referer': 'https://qipedc.moet.gov.vn/'
-        }
-      };
-      if (player.replaceAsync) {
-        player.replaceAsync(source);
-      } else {
-        player.replace(source);
-      }
-      player.play();
-    } else {
-      player.pause();
-    }
-  }, [videoUrl, player]);
-
-  useEffect(() => {
-    if (selectedWord) {
-        setVideoUrl(selectedWord.videoUrl);
-    }
-  }, [selectedWord]);
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true);
+      return () => setIsFocused(false);
+    }, [])
+  );
 
   const getDisplayName = (item: DictionaryItem) => {
     return item.word; 
@@ -21916,13 +21896,19 @@ export default function AvatarScreen() {
     return data;
   }, [searchQuery, filterRegion, sortOrder]);
 
+  const handleWordSelect = useCallback((item: DictionaryItem) => {
+    InteractionManager.runAfterInteractions(() => {
+      setSelectedWord(item);
+    });
+  }, []);
+
   const renderItem = ({ item }: { item: DictionaryItem }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
-        styles.itemContainer, 
+        styles.itemContainer,
         { borderBottomColor: theme.lightGray, backgroundColor: selectedWord?.id === item.id ? theme.controlBG : 'transparent' }
       ]}
-      onPress={() => setSelectedWord(item)}
+      onPress={() => handleWordSelect(item)}
     >
       <View style={[styles.iconContainer, { backgroundColor: theme.controlBG }]}>
         <Ionicons name="videocam" size={24} color={theme.primary} />
@@ -21967,17 +21953,17 @@ export default function AvatarScreen() {
             <View style={styles.filterRow}>
               <Text style={[styles.filterLabel, { color: theme.text }]}>Sắp xếp:</Text>
               <View style={styles.chipContainer}>
-                <TouchableOpacity 
-                  style={[styles.chip, sortOrder === 'AZ' && { backgroundColor: theme.primary }]}
+                <TouchableOpacity
+                  style={[styles.chip, { backgroundColor: theme.controlBG }, sortOrder === 'AZ' && { backgroundColor: theme.primary }]}
                   onPress={() => setSortOrder('AZ')}
                 >
-                  <Text style={[styles.chipText, sortOrder === 'AZ' && { color: 'white' }]}>A-Z</Text>
+                  <Text style={[styles.chipText, { color: theme.mediumGray }, sortOrder === 'AZ' && { color: 'white' }]}>A-Z</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.chip, sortOrder === 'ZA' && { backgroundColor: theme.primary }]}
+                <TouchableOpacity
+                  style={[styles.chip, { backgroundColor: theme.controlBG }, sortOrder === 'ZA' && { backgroundColor: theme.primary }]}
                   onPress={() => setSortOrder('ZA')}
                 >
-                  <Text style={[styles.chipText, sortOrder === 'ZA' && { color: 'white' }]}>Z-A</Text>
+                  <Text style={[styles.chipText, { color: theme.mediumGray }, sortOrder === 'ZA' && { color: 'white' }]}>Z-A</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -21988,10 +21974,10 @@ export default function AvatarScreen() {
                 {(['Tất cả', 'Bắc', 'Trung', 'Nam', 'Chung'] as RegionFilter[]).map((region) => (
                   <TouchableOpacity 
                     key={region}
-                    style={[styles.chip, filterRegion === region && { backgroundColor: theme.primary }]}
+                    style={[styles.chip, { backgroundColor: theme.controlBG }, filterRegion === region && { backgroundColor: theme.primary }]}
                     onPress={() => setFilterRegion(region)}
                   >
-                    <Text style={[styles.chipText, filterRegion === region && { color: 'white' }]}>
+                    <Text style={[styles.chipText, { color: theme.mediumGray }, filterRegion === region && { color: 'white' }]}>
                       {region}
                     </Text>
                   </TouchableOpacity>
@@ -22004,14 +21990,8 @@ export default function AvatarScreen() {
 
       <View style={styles.videoSection}>
         {selectedWord ? (
-          <View style={styles.videoWrapper}>
-            <VideoView
-              style={styles.video}
-              player={player}
-              contentFit="contain"
-              allowsPictureInPicture
-              nativeControls={true} 
-            />
+          <View style={[styles.videoWrapper, { backgroundColor: theme.controlBG, borderColor: theme.borderColor }]}>
+            {videoUrl && isFocused && <DictVideoSection key={videoUrl} url={videoUrl} />}
             <View style={styles.videoLabel}>
                <Text style={styles.videoLabelText}>{getDisplayName(selectedWord)}</Text>
             </View>
@@ -22040,12 +22020,30 @@ export default function AvatarScreen() {
   );
 }
 
+function DictVideoSection({ url }: { url: string }) {
+  const { colors } = useTheme();
+  const source = {
+    uri: url,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': 'https://qipedc.moet.gov.vn/',
+    },
+  };
+  const player = useVideoPlayer(source, (p) => {
+    p.loop = true;
+    p.play();
+  });
+  return (
+    <VideoView style={[styles.video, { backgroundColor: colors.controlBG }]} player={player} contentFit="contain" nativeControls />
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1 
+  container: {
+    flex: 1
   },
   headerContainer: {
-    paddingTop: Platform.OS === 'android' ? 50 : 20, 
+    paddingTop: 4,
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
@@ -22094,16 +22092,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   chip: {
-    paddingHorizontal: 16, 
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#e0e0e0', 
     marginRight: 10,
   },
-  chipText: { 
-    fontSize: 14, 
+  chipText: {
+    fontSize: 14,
     fontWeight: '500',
-    color: '#333' 
   },
   videoSection: {
     height: 300, 
@@ -22113,13 +22109,11 @@ const styles = StyleSheet.create({
   },
   videoWrapper: {
     width: '100%',
-    height: '100%', 
-    borderRadius: 12, 
-    overflow: 'hidden', 
-    backgroundColor: '#687076', 
-    borderWidth: 2,         
-    borderColor: '#687076',
-    elevation: 5,
+    height: '100%',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    elevation: 3,
     position: 'relative',
   },
   video: { 

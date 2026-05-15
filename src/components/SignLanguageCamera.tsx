@@ -96,7 +96,7 @@ export default function SignLanguageCamera() {
  const frameProcessor = useFrameProcessor((frame) => {
   'worklet';
 
-  runAtTargetFps(5, () => {
+  runAtTargetFps(12, () => {
     if (!plugin) return;
 
     const landmarks = plugin.call(frame);

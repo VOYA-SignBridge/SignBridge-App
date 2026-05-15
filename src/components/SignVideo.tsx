@@ -12,6 +12,7 @@ type SignVideoProps = {
 export function SignVideo({ url, width, height }: SignVideoProps) {
   const player = useVideoPlayer(url, (player) => {
     player.loop = true;
+    player.play();
   });
 
   return (

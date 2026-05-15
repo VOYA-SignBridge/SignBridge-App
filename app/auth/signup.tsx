@@ -1,100 +1,119 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity } from 'react-native';
-import { supabase } from '../db/supabase';
+import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '@/lib/supabase';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const { t } = useTranslation();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const isFormValid = fullName.trim() !== '' && email.trim() !== '' && password !== '' && confirm !== '';
 
   const handleSignUp = async () => {
     if (!isFormValid) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ các trường.');
+      Alert.alert(t('auth.missingInfo'), t('auth.missingInfoMsgReg'));
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Mật khẩu không khớp');
+      Alert.alert(t('auth.passwordMismatch'));
       return;
     }
 
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
+      options: { data: { full_name: fullName } },
     });
 
     if (error) {
-      Alert.alert('Lỗi', error.message);
+      Alert.alert(t('auth.error'), error.message);
     } else {
-      Alert.alert('Thành công', 'Tài khoản đã được tạo! Vui lòng đăng nhập.');
+      Alert.alert(t('auth.success'), t('auth.registerSuccess'));
       router.replace('/auth/signin');
     }
   };
 
+  const inputStyle = [styles.input, { borderColor: colors.primary, color: colors.text, backgroundColor: colors.textInputBG }];
+
   return (
-    <LinearGradient colors={['#fff', '#fff']} style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
-      <Text style={styles.subtitle}>Vui lòng điền đầy đủ thông tin</Text>
+      <Text style={[styles.subtitle, { color: colors.mediumGray }]}>{t('auth.registerSubtitle')}</Text>
 
       <TextInput
-        placeholder="Họ và tên"
-        placeholderTextColor="#ccc"
-        style={styles.input}
+        placeholder={t('auth.fullName')}
+        placeholderTextColor={colors.mediumGray}
+        selectionColor={colors.primary}
+        style={inputStyle}
         value={fullName}
         onChangeText={setFullName}
       />
-
       <TextInput
-        placeholder="Email"
-        placeholderTextColor="#ccc"
-        style={styles.input}
+        placeholder={t('auth.email')}
+        placeholderTextColor={colors.mediumGray}
+        selectionColor={colors.primary}
+        style={inputStyle}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
       />
-      <TextInput
-        placeholder="Mật khẩu"
-        placeholderTextColor="#ccc"
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TextInput
-        placeholder="Xác nhận mật khẩu"
-        placeholderTextColor="#ccc"
-        style={styles.input}
-        value={confirm}
-        onChangeText={setConfirm}
-        secureTextEntry
-      />
 
-      <TouchableOpacity 
-        style={[styles.button, !isFormValid && styles.buttonDisabled]} 
+      <View style={[styles.passwordWrapper, { borderColor: colors.primary, backgroundColor: colors.textInputBG }]}>
+        <TextInput
+          placeholder={t('auth.password')}
+          placeholderTextColor={colors.mediumGray}
+          selectionColor={colors.primary}
+          style={[styles.passwordInput, { color: colors.text }]}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+        />
+        <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
+          <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={colors.mediumGray} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={[styles.passwordWrapper, { borderColor: colors.primary, backgroundColor: colors.textInputBG }]}>
+        <TextInput
+          placeholder={t('auth.confirmPassword')}
+          placeholderTextColor={colors.mediumGray}
+          selectionColor={colors.primary}
+          style={[styles.passwordInput, { color: colors.text }]}
+          value={confirm}
+          onChangeText={setConfirm}
+          secureTextEntry={!showConfirm}
+        />
+        <TouchableOpacity onPress={() => setShowConfirm(v => !v)} style={styles.eyeBtn}>
+          <Ionicons name={showConfirm ? 'eye-outline' : 'eye-off-outline'} size={20} color={colors.mediumGray} />
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: isFormValid ? colors.primary : colors.avatarBG }]}
         onPress={handleSignUp}
         disabled={!isFormValid}
       >
-        <Text style={styles.buttonText}>Đăng ký</Text>
+        <Text style={styles.buttonText}>{t('auth.signUp')}</Text>
       </TouchableOpacity>
 
       <Link href="/auth/signin" asChild>
         <TouchableOpacity>
-          <Text style={styles.link}>
-            Bạn đã có tài khoản? <Text style={styles.boldText}>Đăng nhập</Text>
+          <Text style={[styles.link, { color: colors.primary }]}>
+            {t('auth.haveAccount')} <Text style={styles.boldText}>{t('auth.signIn')}</Text>
           </Text>
         </TouchableOpacity>
       </Link>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -103,50 +122,60 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24
+    padding: 24,
   },
   logo: {
     height: 200,
     width: 200,
-    marginBottom: 3
+    marginBottom: 3,
   },
   subtitle: {
-    color: 'grey',
     fontSize: 14,
     textAlign: 'center',
-    marginBottom: 23
+    marginBottom: 23,
   },
   input: {
     width: '100%',
-    borderColor: '#00afef',
     borderWidth: 1,
     borderRadius: 10,
-    color: '#00afef',
     padding: 12,
-    marginBottom: 12
+    marginBottom: 12,
+    fontSize: 15,
+  },
+  passwordWrapper: {
+    width: '100%',
+    borderWidth: 1,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 12,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 15,
+  },
+  eyeBtn: {
+    padding: 4,
   },
   button: {
-    backgroundColor: '#1f5ca9',
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
     width: '100%',
-    marginTop: 8
-  },
-  buttonDisabled: {
-    backgroundColor: '#a0bce0'
+    marginTop: 8,
   },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16
+    fontSize: 16,
   },
   link: {
-    color: '#00afef',
     marginTop: 16,
     fontSize: 14,
   },
   boldText: {
-    fontWeight: 'bold'
-  }
+    fontWeight: 'bold',
+  },
 });

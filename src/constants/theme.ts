@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 const tintColorLight = '#45C8C2';
-const tintColorDark = '#45C8C2'; 
+const tintColorDark = '#45C8C2';
 
 export const Colors = {
   light: {
@@ -19,6 +19,12 @@ export const Colors = {
     white: '#FFFFFF',
     textInputBG: '#f0f0f0',
     controlBG: '#f9f9f9',
+    success: '#10B981',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    avatarBG: '#9BA1A6',
+    cardBG: '#F5F5F5',
+    borderColor: '#E8E8E8',
   },
   dark: {
     text: '#ECEDEE',
@@ -28,25 +34,27 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
-    primary: '#45C8C2',    
-    lightGray: '#E8E8E8', 
-    mediumGray: '#666666', 
-    darkGray: '#111111',     
+    primary: '#45C8C2',
+    lightGray: '#2A2A2A',
+    mediumGray: '#888888',
+    darkGray: '#111111',
     white: '#FFFFFF',
-    textInputBG: '#333333', 
+    textInputBG: '#333333',
     controlBG: '#333333',
+    success: '#10B981',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    avatarBG: '#555555',
+    cardBG: '#1E1E1E',
+    borderColor: '#555555',
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {

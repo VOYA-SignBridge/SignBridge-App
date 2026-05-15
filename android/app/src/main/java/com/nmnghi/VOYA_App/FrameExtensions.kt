@@ -46,6 +46,18 @@ private fun ImageProxy.toBitmapWithRotation(): Bitmap {
         )
     }
 
+    // Emulator fix: webcam laptop gửi frame landscape với rotationDegrees=0.
+    // MediaPipe cần frame portrait → tự rotate thêm 90° nếu width > height.
+    if (bitmap.width > bitmap.height) {
+        val matrix = Matrix()
+        matrix.postRotate(90f)
+        bitmap = Bitmap.createBitmap(
+            bitmap, 0, 0,
+            bitmap.width, bitmap.height,
+            matrix, true
+        )
+    }
+
     return bitmap
 }
 

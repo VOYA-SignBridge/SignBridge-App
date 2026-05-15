@@ -1,42 +1,29 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, Image } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function SplashScreen() {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Image 
-        source={require('../../assets/images/logo.png')} 
-        style={styles.logo}
-        resizeMode="contain"
-      />
-
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <ActivityIndicator size="large" color={colors.primary} />
-
-      <Text style={[styles.text, { color: colors.text }]}>
-        Đang kiểm tra dữ liệu...
+      <Text style={[styles.text, { color: colors.mediumGray }]}>
+        Vui lòng chờ...
       </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  logo: {
-    width: 200,          
-    height: 200,          
-    marginBottom: 30,   
-    borderRadius: 25,
+    gap: 14,
   },
   text: {
-    marginTop: 20,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
   },
 });

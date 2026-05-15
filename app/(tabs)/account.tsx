@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  SafeAreaView,
   Alert,
   ActivityIndicator,
   Modal
 } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 import { Dropdown } from 'react-native-element-dropdown';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -20,7 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDictionaryStore } from '../data/useDictionaryStore';
 import { syncDictionary } from '../data/DictionaryService';
 import { APP_LANGUAGES, SIGN_LANGUAGES } from '../data/languages';
-import { supabase } from '../db/supabase';
+import { supabase } from '@/lib/supabase';
 
 type User = {
   email: string;
@@ -28,19 +30,15 @@ type User = {
 };
 
 export default function AccountScreen() {
-  const {
-    theme,
-    toggleTheme,
-    colors
-  } = useTheme();
-  
+  const { theme, toggleTheme, colors } = useTheme();
+  const { appLang, switchLanguage } = useLanguage();
+  const { t } = useTranslation();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const setRegion = useDictionaryStore(state => state.setRegion);
   const currentRegion = useDictionaryStore(state => state.region);
-  const [appLangValue, setAppLangValue] = useState('Vietnamese');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -76,10 +74,10 @@ export default function AccountScreen() {
       await syncDictionary(item.value);
       
       console.log("Thay doi vung mien va tai du lieu thanh cong");
-      Alert.alert("Thành công", "Đã chuyển sang bộ từ điển " + item.label);
+      Alert.alert(t('settings.success'), t('settings.dictChanged', { lang: item.label }));
     } catch (error) {
       console.log("Loi khi thay doi vung mien: " + error);
-      Alert.alert("Lỗi", "Không thể tải bộ từ điển mới");
+      Alert.alert(t('settings.error'), t('settings.dictError'));
     } finally {
       setIsDownloading(false);
     }
@@ -105,12 +103,9 @@ export default function AccountScreen() {
         visible={isDownloading}
       >
         <View style={styles.loadingOverlay}>
-          <View style={styles.loadingBox}>
-            <ActivityIndicator
-              size="large"
-              color={colors.primary}
-            />
-            <Text style={styles.loadingText}>Đang tải dữ liệu ký hiệu...</Text>
+          <View style={[styles.loadingBox, { backgroundColor: colors.cardBG }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.text }]}>{t('settings.loadingDict')}</Text>
           </View>
         </View>
       </Modal>
@@ -120,39 +115,19 @@ export default function AccountScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.brandHeader}>
-            <Text style={[
-              styles.brandTitle,
-              {
-                color: colors.text2
-              }
-            ]}>SignBridge</Text>
-            <Text style={styles.brandSubtitle}>by CTU & CSIRO</Text>
+          <Text style={[styles.brandTitle, { color: colors.text2 }]}>SignBridge</Text>
+          <Text style={[styles.brandSubtitle, { color: colors.mediumGray }]}>by CTU & CSIRO</Text>
         </View>
 
-        <View style={styles.profileSection}>
-          <Image 
-            source={require('../../assets/images/default.jpg')} 
-            style={[
-              styles.avatar,
-              {
-                borderColor: colors.primary
-              }
-            ]}
+        <View style={styles.profileCard}>
+          <Image
+            source={require('../../assets/images/default.jpg')}
+            style={[styles.avatar, { borderColor: colors.primary }]}
           />
-          <Text style={[
-            styles.profileName,
-            {
-              color: colors.text
-            }
-          ]}>
+          <Text style={[styles.profileName, { color: colors.text }]}>
             {user?.full_name}
           </Text>
-          <Text style={[
-            styles.profileEmail,
-            {
-              color: colors.icon
-            }
-          ]}>
+          <Text style={[styles.profileEmail, { color: colors.icon }]}>
             {user?.email}
           </Text>
         </View>
@@ -160,7 +135,7 @@ export default function AccountScreen() {
         <View style={[
           styles.settingsGroup,
           {
-            backgroundColor: theme === 'dark' ? colors.controlBG : '#fff'
+            backgroundColor: colors.controlBG
           }
         ]}>
           <View style={[
@@ -173,7 +148,7 @@ export default function AccountScreen() {
               <View style={[
                 styles.iconBox,
                 {
-                  backgroundColor: theme === 'dark' ? '#333' : '#F5F5F5'
+                  backgroundColor: colors.cardBG
                 }
               ]}>
                 <Ionicons
@@ -187,7 +162,7 @@ export default function AccountScreen() {
                 {
                   color: colors.text
                 }
-              ]}>Ngôn ngữ ứng dụng</Text>
+              ]}>{t('settings.appLanguage')}</Text>
             </View>
             <Dropdown
               style={styles.dropdown}
@@ -201,15 +176,15 @@ export default function AccountScreen() {
               maxHeight={300}
               labelField="label"
               valueField="value"
-              placeholder="Chọn..."
+              placeholder={t('settings.select')}
               placeholderStyle={{
                 color: colors.icon,
                 fontSize: 14,
                 textAlign: 'right',
                 marginRight: 8
               }}
-              value={appLangValue}
-              onChange={item => setAppLangValue(item.value)}
+              value={appLang}
+              onChange={item => switchLanguage(item.value as 'vi' | 'en')}
               renderRightIcon={() => (
                 <Ionicons
                   name="chevron-forward"
@@ -230,7 +205,7 @@ export default function AccountScreen() {
               <View style={[
                 styles.iconBox,
                 {
-                  backgroundColor: theme === 'dark' ? '#333' : '#F5F5F5'
+                  backgroundColor: colors.cardBG
                 }
               ]}>
                 <Ionicons
@@ -244,7 +219,7 @@ export default function AccountScreen() {
                 {
                   color: colors.text
                 }
-              ]}>Ngôn ngữ ký hiệu</Text>
+              ]}>{t('settings.signLanguage')}</Text>
             </View>
             <Dropdown
               style={styles.dropdown}
@@ -258,7 +233,7 @@ export default function AccountScreen() {
               maxHeight={300}
               labelField="label"
               valueField="value"
-              placeholder="Chọn..."
+              placeholder={t('settings.select')}
               placeholderStyle={{
                 color: colors.icon,
                 fontSize: 14,
@@ -282,7 +257,7 @@ export default function AccountScreen() {
               <View style={[
                 styles.iconBox,
                 {
-                  backgroundColor: theme === 'dark' ? '#333' : '#F5F5F5'
+                  backgroundColor: colors.cardBG
                 }
               ]}>
                 <Ionicons
@@ -296,7 +271,7 @@ export default function AccountScreen() {
                 {
                   color: colors.text
                 }
-              ]}>Giao diện tối</Text>
+              ]}>{t('settings.darkMode')}</Text>
             </View>
             <Switch
               trackColor={{
@@ -325,7 +300,7 @@ export default function AccountScreen() {
             size={20}
             color="#fff"
           />
-          <Text style={styles.logoutText}>Đăng xuất</Text>
+          <Text style={styles.logoutText}>{t('settings.logout')}</Text>
         </TouchableOpacity>
 
         <Text style={[
@@ -333,7 +308,7 @@ export default function AccountScreen() {
           {
             color: colors.icon
           }
-        ]}>Phiên bản 1.0.0</Text>
+        ]}>{t('settings.version')}</Text>
         <View style={{
           height: 40
         }} />
@@ -356,71 +331,51 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   loadingBox: {
-    backgroundColor: '#fff',
     padding: 25,
     borderRadius: 15,
     alignItems: 'center',
-    width: '80%'
+    width: '80%',
   },
   loadingText: {
     marginTop: 15,
     fontSize: 16,
     fontWeight: '600',
-    color: '#333'
   },
   brandHeader: {
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'center',
-    marginBottom: 25,
-    marginTop: 40
+    marginBottom: 20,
+    marginTop: 36,
   },
   brandTitle: {
     fontSize: 24,
-    fontWeight: '800'
+    fontWeight: '800',
   },
   brandSubtitle: {
-    fontSize: 18,
-    color: '#888',
+    fontSize: 17,
     fontWeight: '600',
-    marginLeft: 8
+    marginLeft: 8,
   },
-  profileSection: {
+  profileCard: {
     alignItems: 'center',
-    marginBottom: 20
+    marginBottom: 20,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 2,
-    marginBottom: 12
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 2.5,
+    marginBottom: 14,
   },
   profileName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 4
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   profileEmail: {
-    fontSize: 15,
-    marginBottom: 8
-  },
-  roleBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 4
-  },
-  roleText: {
-    fontSize: 12,
-    fontWeight: '600'
-  },
-  sectionHeader: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 10,
-    marginLeft: 10,
-    opacity: 0.6
+    fontSize: 14,
+    marginBottom: 8,
   },
   settingsGroup: {
     borderRadius: 16,

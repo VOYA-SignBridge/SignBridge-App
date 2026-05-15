@@ -8,11 +8,12 @@ import {
   TouchableWithoutFeedback,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   Keyboard,
-  Alert
+  Alert,
 } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import SignLanguageCamera from '@/components/SignLanguageCamera';
@@ -23,131 +24,97 @@ import { getSignVideoUrl } from '../utils/CloudinaryHelper';
 
 export default function TranslationScreen() {
   const { colors: theme } = useTheme();
+  const { t } = useTranslation();
 
   const [showCamera, setShowCamera] = useState(false);
   const [mode, setMode] = useState<'word' | 'letter'>('word');
-  const [textInput, setTextInput] = useState("");
-  const [translatedText, setTranslatedText] = useState(""); 
+  const [textInput, setTextInput] = useState('');
+  const [translatedText, setTranslatedText] = useState('');
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   const findWord = useDictionaryStore((state) => state.findWord);
-  const isReady = useDictionaryStore((state) => state.isReady);
-  const dictionaryData = useDictionaryStore((state) => state.data);
-
-  const player = useVideoPlayer(videoUrl, (player) => {
-    player.loop = false;
-    if (videoUrl) {
-      player.play();
-    }
-  });
 
   useEffect(() => {
-    if (videoUrl && player) {
-      player.play();
-    }
-  }, [videoUrl, player]);
-
-  useEffect(() => {
-    setTranslatedText("");
+    setTranslatedText('');
   }, [showCamera, mode]);
 
   const handleWordResult = (newWord: string) => {
-    setTranslatedText(prev => {
+    setTranslatedText((prev) => {
       const words = prev.trim().split(' ');
-      if (words.length > 0 && words[words.length - 1].toLowerCase() === newWord.toLowerCase()) return prev;
+      if (words.length > 0 && words[words.length - 1].toLowerCase() === newWord.toLowerCase())
+        return prev;
       return prev ? `${prev} ${newWord}` : newWord;
     });
   };
 
   const handleLetterResult = (newChar: string) => {
-    setTranslatedText(prev => prev + newChar);
+    setTranslatedText((prev) => prev + newChar);
   };
 
   const closeCamera = () => {
     setShowCamera(false);
-    setTranslatedText("");
+    setTranslatedText('');
   };
 
   async function translateTextToVideo() {
     if (!textInput.trim()) return;
     Keyboard.dismiss();
 
-    console.log(`\n--- BAT DAU TIM KIEM ---`);
-    console.log(`- Noi dung nhap: "${textInput}"`);
-    console.log(`- Trang thai RAM: ${isReady ? "Da san sang" : "Chua co du lieu"}`);
-    console.log(`- So luong tu hien co: ${Object.keys(dictionaryData).length}`);
-
     const publicId = findWord(textInput);
 
     if (publicId) {
-      console.log(`Tim thay public_id: ${publicId}`);
-      const url = getSignVideoUrl(publicId);
-      console.log(`Video URL: ${url}`);
-      setVideoUrl(url);
+      setVideoUrl(getSignVideoUrl(publicId));
     } else {
-      console.log(`Khong tim thay du lieu cho tu: "${textInput}"`);
-      console.log(`Mau Keys hien co:`, Object.keys(dictionaryData).slice(0, 3));
-      
-      Alert.alert("Chua co du lieu", `Tu "${textInput}" hien chua co trong tu dien cua SignBridge.`);
+      Alert.alert(t('translation.noData'), t('translation.noDataMsg', { word: textInput }));
       setVideoUrl(null);
     }
-    console.log(`--- KET THUC TÌM KIEM ---\n`);
   }
 
   const hasText = textInput.trim().length > 0;
-  const inputBackgroundColor = theme.background === '#000000' ? '#1c1c1e' : '#F2F2F7';
+  const inputBg = theme.textInputBG;
 
+  // ── Camera view ──────────────────────────────────────────────
   if (showCamera) {
     return (
       <View style={{ flex: 1, backgroundColor: 'black' }}>
-        <SignLanguageCamera 
-          theme={theme} 
-          onClose={closeCamera}
-          onTranslationUpdate={handleWordResult}
-        />
-        
+        <SignLanguageCamera />
+
         <TouchableOpacity style={styles.closeBtn} onPress={closeCamera}>
           <Ionicons name="close" size={28} color="#ffffff" />
         </TouchableOpacity>
-        
+
         <View style={styles.modeSwitchContainer}>
           <View style={styles.modeSwitchBackground}>
-            <TouchableOpacity 
-              style={[
-                styles.modeBtn, 
-                mode === 'word' && { backgroundColor: theme.primary }
-              ]}
+            <TouchableOpacity
+              style={[styles.modeBtn, mode === 'word' && { backgroundColor: theme.primary }]}
               onPress={() => setMode('word')}
             >
-              <Text style={[
-                styles.modeText, 
-                mode === 'word' && styles.modeTextActive
-              ]}>Từ vựng</Text>
+              <Text style={[styles.modeText, mode === 'word' && styles.modeTextActive]}>
+                {t('translation.wordMode')}
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[
-                styles.modeBtn, 
-                mode === 'letter' && { backgroundColor: theme.primary }
-              ]}
+            <TouchableOpacity
+              style={[styles.modeBtn, mode === 'letter' && { backgroundColor: theme.primary }]}
               onPress={() => setMode('letter')}
             >
-              <Text style={[
-                styles.modeText, 
-                mode === 'letter' && styles.modeTextActive
-              ]}>Chữ cái</Text>
+              <Text style={[styles.modeText, mode === 'letter' && styles.modeTextActive]}>
+                {t('translation.alphabetMode')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {mode === 'word' && (
           <View style={[styles.cameraResultBox, { borderColor: 'rgba(255,255,255,0.1)' }]}>
-            <Text style={[styles.cameraResultLabel, { color: theme.primary }]}>Kết quả dịch:</Text>
-            <Text style={styles.cameraResultText}>
-              {translatedText || "..."}
+            <Text style={[styles.cameraResultLabel, { color: theme.primary }]}>
+              {t('translation.translationResult')}
             </Text>
+            <Text style={styles.cameraResultText}>{translatedText || '...'}</Text>
             {translatedText.length > 0 && (
-              <TouchableOpacity onPress={() => setTranslatedText("")} style={styles.clearBtn}>
-                <Text style={styles.clearBtnText}>Xóa</Text>
+              <TouchableOpacity onPress={() => setTranslatedText('')} style={styles.clearBtn}>
+                <Text style={[styles.clearBtnText, { color: theme.error }]}>
+                  {t('translation.clear')}
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -164,56 +131,69 @@ export default function TranslationScreen() {
     );
   }
 
+  // ── Main view ─────────────────────────────────────────────────
   return (
-    <SafeAreaView style={[styles.mainContainer, { backgroundColor: theme.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.contentContainer}>
-            {videoUrl ? (
-              <View style={styles.mediaContainer}>
-                <VideoView 
-                  style={styles.videoPlayer} 
-                  player={player} 
-                  contentFit="contain" 
-                  allowsPictureInPicture 
-                />
-              </View>
-            ) : (
-              <View style={[
-                styles.mediaContainer, 
-                styles.placeholderBox, 
-                { borderColor: theme.lightGray, backgroundColor: theme.controlBG }
-              ]}>
-                <Ionicons 
-                  name="videocam-outline" 
-                  size={48} 
-                  color={theme.icon} 
-                  style={{ opacity: 0.5, marginBottom: 16 }} 
-                />
-                <Text style={[styles.welcomeText, { color: theme.text }]}>Xin chào!</Text>
-                <Text style={[styles.subText, { color: theme.icon }]}>
-                  {"Nhập văn bản để tôi dịch sang\nngôn ngữ ký hiệu nhé."}
-                </Text>
-              </View>
-            )}
-          </View>
-        </TouchableWithoutFeedback>
+    <SafeAreaView edges={['top', 'left', 'right']} style={[styles.root, { backgroundColor: theme.background }]}>
 
-        <View style={[
-          styles.bottomBarContainer, 
-          { backgroundColor: theme.background, borderTopColor: 'transparent' }
-        ]}>
+      {/* ── Content (fills space above bottom bar) ── */}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.body}>
+          {videoUrl ? (
+            /* Video card */
+            <View style={[styles.videoCard, { backgroundColor: theme.cardBG }]}>
+              <VideoSection url={videoUrl} />
+              <View style={[styles.videoFooter, { borderTopColor: theme.lightGray }]}>
+                <Ionicons name="volume-high-outline" size={16} color={theme.mediumGray} />
+                <Text style={[styles.videoWord, { color: theme.text }]} numberOfLines={1}>
+                  {textInput}
+                </Text>
+                <TouchableOpacity onPress={() => { setVideoUrl(null); setTextInput(''); }}>
+                  <Ionicons name="close-circle-outline" size={20} color={theme.mediumGray} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            /* Placeholder card */
+            <View style={[styles.placeholder, { backgroundColor: theme.cardBG, borderWidth: 1.5, borderStyle: 'dashed', borderColor: theme.borderColor }]}>
+              <Text style={[styles.placeholderTitle, { color: theme.text }]}>
+                {t('translation.greeting')}
+              </Text>
+              <Text style={[styles.placeholderSub, { color: theme.mediumGray }]}>
+                {t('translation.greetingSubtitle')}
+              </Text>
+              <View style={styles.hintRow}>
+                <View style={[styles.hintChip, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '40' }]}>
+                  <Ionicons name="camera-outline" size={14} color={theme.primary} />
+                  <Text style={[styles.hintText, { color: theme.primary }]}>Camera</Text>
+                </View>
+                <View style={[styles.hintChip, { backgroundColor: theme.success + '15', borderColor: theme.success + '40' }]}>
+                  <Ionicons name="text-outline" size={14} color={theme.success} />
+                  <Text style={[styles.hintText, { color: theme.success }]}>
+                    {t('translation.typeHint')}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
+      </TouchableWithoutFeedback>
+
+      {/* ── Bottom bar — KAV chỉ bọc bar này, không bọc toàn bộ layout ── */}
+      {/* Android: adjustResize trong manifest tự co window → behavior=undefined */}
+      {/* iOS: behavior='padding' để đẩy bar lên trên keyboard */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={[styles.bottomBarContainer, { backgroundColor: theme.background, borderTopColor: 'transparent' }]}>
           <TouchableOpacity onPress={() => setShowCamera(true)} style={styles.iconBtnOutside}>
             <Ionicons name="camera" size={22} color={theme.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconBtnOutside}>
             <Ionicons name="mic" size={22} color={theme.primary} />
           </TouchableOpacity>
-          
-          <View style={[styles.inputWrapper, { backgroundColor: inputBackgroundColor }]}>
+
+          <View style={[styles.inputWrapper, { backgroundColor: inputBg }]}>
             <TextInput
               style={[styles.textInput, { color: theme.text }]}
-              placeholder="Nhập nội dung..."
+              placeholder={t('translation.enterContent')}
               placeholderTextColor={theme.icon}
               value={textInput}
               onChangeText={setTextInput}
@@ -224,69 +204,120 @@ export default function TranslationScreen() {
               autoCapitalize="none"
             />
           </View>
-          
-          <TouchableOpacity 
-            onPress={translateTextToVideo} 
-            disabled={!hasText} 
+
+          <TouchableOpacity
+            onPress={translateTextToVideo}
+            disabled={!hasText}
             style={[
-              styles.sendButton, 
-              { 
-                backgroundColor: hasText ? theme.primary : inputBackgroundColor, 
-                elevation: hasText ? 5 : 0 
-              }
+              styles.sendButton,
+              {
+                backgroundColor: hasText ? theme.primary : inputBg,
+                elevation: hasText ? 5 : 0,
+              },
             ]}
           >
-            <Ionicons 
-              name="send" 
-              size={20} 
-              color={hasText ? theme.white : theme.icon} 
-              style={{ marginLeft: hasText ? 2 : 0 }} 
+            <Ionicons
+              name="send"
+              size={20}
+              color={hasText ? theme.white : theme.icon}
+              style={{ marginLeft: hasText ? 2 : 0 }}
             />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
     </SafeAreaView>
   );
 }
 
+function VideoSection({ url }: { url: string }) {
+  const player = useVideoPlayer(url, (p) => {
+    p.loop = true;
+    p.play();
+  });
+  return (
+    <VideoView
+      style={styles.videoPlayer}
+      player={player}
+      contentFit="contain"
+      allowsPictureInPicture
+    />
+  );
+}
+
 const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1
-  },
-  contentContainer: {
+  root: { flex: 1 },
+
+  // Body
+  body: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 40
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
-  mediaContainer: {
-    width: '90%',
-    aspectRatio: 3 / 4,
+
+  // Placeholder
+  placeholder: {
+    flex: 1,
+    borderRadius: 24,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center'
+    padding: 28,
+  },
+  placeholderTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  placeholderSub: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 24,
+  },
+  hintRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  hintChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  hintText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  // Video card
+  videoCard: {
+    flex: 1,
+    borderRadius: 24,
+    overflow: 'hidden',
   },
   videoPlayer: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'transparent'
+    flex: 1,
+    backgroundColor: 'transparent',
   },
-  placeholderBox: {
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderRadius: 20,
-    justifyContent: 'center',
+  videoFooter: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 24
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
   },
-  welcomeText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 8
-  },
-  subText: {
+  videoWord: {
+    flex: 1,
     fontSize: 15,
-    textAlign: 'center'
+    fontWeight: '600',
   },
+
+  // Bottom bar (giữ nguyên)
   bottomBarContainer: {
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -294,11 +325,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: Platform.OS === 'ios' ? 20 : 12
+    paddingBottom: 8,
   },
   iconBtnOutside: {
     padding: 6,
-    marginRight: 2
+    marginRight: 2,
   },
   inputWrapper: {
     flex: 1,
@@ -309,12 +340,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginRight: 8,
     marginLeft: 4,
-    borderWidth: 0
+    borderWidth: 0,
   },
   textInput: {
     flex: 1,
     fontSize: 16,
-    height: '100%'
+    height: '100%',
   },
   sendButton: {
     width: 44,
@@ -322,13 +353,12 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowOffset: {
-      width: 0,
-      height: 3
-    },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
-    shadowRadius: 4
+    shadowRadius: 4,
   },
+
+  // Camera overlay styles (giữ nguyên)
   closeBtn: {
     position: 'absolute',
     top: 50,
@@ -341,14 +371,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 100,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)'
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   modeSwitchContainer: {
     position: 'absolute',
     top: 60,
     width: '100%',
     alignItems: 'center',
-    zIndex: 20
+    zIndex: 20,
   },
   modeSwitchBackground: {
     flexDirection: 'row',
@@ -356,21 +386,21 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     padding: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   modeBtn: {
     paddingVertical: 8,
     paddingHorizontal: 24,
-    borderRadius: 20
+    borderRadius: 20,
   },
   modeText: {
     color: 'rgba(255,255,255,0.7)',
     fontWeight: '600',
-    fontSize: 14
+    fontSize: 14,
   },
   modeTextActive: {
     color: 'white',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   controlLayer: {
     position: 'absolute',
@@ -380,7 +410,7 @@ const styles = StyleSheet.create({
     height: '40%',
     justifyContent: 'flex-end',
     paddingBottom: 40,
-    zIndex: 10
+    zIndex: 10,
   },
   cameraResultBox: {
     position: 'absolute',
@@ -391,27 +421,26 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     zIndex: 15,
-    borderWidth: 1
+    borderWidth: 1,
   },
   cameraResultLabel: {
     fontSize: 12,
     fontWeight: 'bold',
-    marginBottom: 4
+    marginBottom: 4,
   },
   cameraResultText: {
     color: 'white',
     fontSize: 20,
-    fontWeight: '700'
+    fontWeight: '700',
   },
   clearBtn: {
     position: 'absolute',
     right: 10,
     top: 10,
-    padding: 5
+    padding: 5,
   },
   clearBtnText: {
-    color: '#F87171',
     fontSize: 12,
-    fontWeight: 'bold'
-  }
+    fontWeight: 'bold',
+  },
 });

@@ -1,13 +1,17 @@
 // app/_layout.tsx
+import '../src/i18n';
 import React from 'react';
 import { Stack } from 'expo-router';
-import { ThemeProvider, useTheme } from '../contexts/ThemeContext'; 
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StatusBar } from 'expo-status-bar';
 
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <ThemedRoot />
+      <LanguageProvider>
+        <ThemedRoot />
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

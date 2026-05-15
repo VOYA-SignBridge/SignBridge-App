@@ -21,7 +21,8 @@ import { SignVideo } from "@/components/SignVideo";
 import QRCode from "react-native-qrcode-svg";
 import SignLanguageCamera from '@/components/SignLanguageCamera';
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from 'contexts/ThemeContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import AlphabetMode from "@/components/translation/AlphabetMode";
 import WordMode from "@/components/translation/WordMode";
 import { useDictionaryStore } from "../../../data/useDictionaryStore";
@@ -40,6 +41,7 @@ export default function RoomScreen() {
 
   
   const { colors: theme } = useTheme();
+  const { t } = useTranslation();
 
   const isDark = theme.background === '#000000' || theme.text === '#FFFFFF';
   const borderColor = isDark ? 'transparent' : '#E5E5E5';
@@ -195,7 +197,7 @@ socket.onerror = (e) => {
         }
 
         if (msg.type === "room.ended") {
-          alert("Chủ phòng đã kết thúc phiên.");
+          alert(t('conversation.roomEnded'));
           try { socket?.close(); } catch (e) { }
           setMessages([]);
           router.replace("/conversation");
@@ -330,10 +332,10 @@ socket.onerror = (e) => {
             <TouchableOpacity onPress={() => setShowParticipantsModal(true)} style={styles.subtitleBtn}>
               <Text numberOfLines={1}>
                 <Text style={[styles.headerSubtitle, { color: theme.icon }]}>
-                    {Object.keys(participants).length} thành viên •{" "}
+                    {t('conversation.memberCount', { count: Object.keys(participants).length })} •{" "}
                 </Text>
                 <Text style={[styles.headerSubtitle, { color: theme.primary, fontWeight: '600' }]}>
-                    Chạm để xem
+                    {t('conversation.tapToView')}
                 </Text>
               </Text>
             </TouchableOpacity>
@@ -344,14 +346,14 @@ socket.onerror = (e) => {
               style={[styles.headerBtn, { backgroundColor: theme.primary }]} 
               onPress={() => setShowQRModal(true)}
             >
-              <Text style={styles.headerBtnText}>Mã QR</Text>
+              <Text style={styles.headerBtnText}>{t('conversation.qrCode')}</Text>
             </TouchableOpacity>
 
                          <TouchableOpacity 
                style={[styles.headerBtn, { backgroundColor: theme.icon || '#999' }]}
                onPress={handleLeaveRoom}
              >
-               <Text style={styles.headerBtnText}>Rời phòng</Text>
+               <Text style={styles.headerBtnText}>{t('conversation.leaveRoom')}</Text>
              </TouchableOpacity>
             
           </View>
@@ -375,7 +377,7 @@ socket.onerror = (e) => {
             return (
               <View style={[styles.messageRow, isMe ? styles.rowRight : styles.rowLeft]}>
                 {!isMe && (
-                  <View style={[styles.avatar, { backgroundColor: '#ccc' }]}>
+                  <View style={[styles.avatar, { backgroundColor: theme.avatarBG }]}>
                     <Text style={styles.avatarText}>{getInitials(sender.display_name)}</Text>
                   </View>
                 )}
@@ -457,7 +459,7 @@ socket.onerror = (e) => {
             <TextInput
   ref={chatInputRef}
   style={[styles.input, { color: theme.text }]}
-  placeholder="Nhập tin nhắn..."
+  placeholder={t('conversation.typeMessage')}
   placeholderTextColor={theme.icon}
   value={text}
   onChangeText={setText}
@@ -508,14 +510,14 @@ socket.onerror = (e) => {
       <Modal visible={showQRModal} transparent animationType="fade" onRequestClose={() => setShowQRModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Mã QR Phòng</Text>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>{t('conversation.qrRoomTitle')}</Text>
             
             <View style={styles.qrWrapper}>
               <QRCode value={`${API_URL}/join/${code}`} size={180} />
             </View>
 
             <View style={styles.codeContainer}>
-               <Text style={[styles.codeLabel, { color: theme.icon }]}>Mã tham gia:</Text>
+               <Text style={[styles.codeLabel, { color: theme.icon }]}>{t('conversation.joinCode')}</Text>
                <Text style={[styles.codeValue, { color: theme.primary }]}>{code}</Text>
             </View>
 
@@ -523,7 +525,7 @@ socket.onerror = (e) => {
               style={[styles.modalCloseButton, { backgroundColor: theme.lightGray || '#eee' }]}
               onPress={() => setShowQRModal(false)}
             >
-              <Text style={[styles.modalCloseText, { color: theme.text }]}>Đóng</Text>
+              <Text style={[styles.modalCloseText, { color: theme.text }]}>{t('conversation.close')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -532,7 +534,7 @@ socket.onerror = (e) => {
       <Modal visible={showParticipantsModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowParticipantsModal(false)}>
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={[styles.modalHeader, { borderBottomColor: borderColor }]}>
-                <Text style={[styles.modalHeaderTitle, { color: theme.text }]}>Thành viên ({Object.keys(participants).length})</Text>
+                <Text style={[styles.modalHeaderTitle, { color: theme.text }]}>{t('conversation.membersTitle', { count: Object.keys(participants).length })}</Text>
                 <TouchableOpacity onPress={() => setShowParticipantsModal(false)} style={styles.closeModalIcon}>
                      <Ionicons name="close" size={24} color={theme.text} />
                 </TouchableOpacity>
@@ -548,18 +550,18 @@ socket.onerror = (e) => {
                     
                     return (
                         <View style={[styles.participantRow, { borderBottomColor: borderColor }]}>
-                            <View style={[styles.avatarLarge, { backgroundColor: isMe ? theme.primary : '#ccc' }]}>
+                            <View style={[styles.avatarLarge, { backgroundColor: isMe ? theme.primary : theme.avatarBG }]}>
                                 <Text style={styles.avatarTextLarge}>{getInitials(item.display_name)}</Text>
                             </View>
                             <View style={styles.participantInfo}>
                                 <Text style={[styles.participantName, { color: theme.text }]}>
-                                    {item.display_name} {isMe && "(Bạn)"}
+                                    {item.display_name} {isMe && t('conversation.you')}
                                 </Text>
                                 <Text style={[styles.participantRole, { color: theme.icon }]}>
-                                    {isOwner ? "Chủ phòng" : "Thành viên"}
+                                    {isOwner ? t('conversation.owner') : t('conversation.member')}
                                 </Text>
                             </View>
-                            {isOwner && <Ionicons name="key" size={16} color="#F59E0B" />}
+                            {isOwner && <Ionicons name="key" size={16} color={theme.warning} />}
                         </View>
                     );
                 }}
@@ -567,10 +569,10 @@ socket.onerror = (e) => {
             <View style={styles.modalFooter}>
              {isOwner && (
   <TouchableOpacity 
-    style={[styles.endedBtn, { backgroundColor: '#EF4444' }]} 
+    style={[styles.endedBtn, { backgroundColor: theme.error }]} 
     onPress={handleEndRoom}
   >
-    <Text style={[styles.headerBtnText]}>Kết thúc</Text>
+    <Text style={[styles.headerBtnText]}>{t('conversation.endRoom')}</Text>
   </TouchableOpacity>
 )}
 </View>

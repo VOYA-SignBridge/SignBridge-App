@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.facebook.react.bridge.*
 import com.google.mediapipe.tasks.core.BaseOptions
+import com.google.mediapipe.tasks.core.Delegate
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
@@ -59,46 +60,55 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     fun initModel() {
         if (HandLandmarkerHolder.handLandmarker != null) {
             Log.d("HandLandmarks", "Model already initialized")
-            sendEvent("onHandLandmarksStatus", Arguments.createMap().apply { 
-                putString("status", "already_initialized") 
+            sendEvent("onHandLandmarksStatus", Arguments.createMap().apply {
+                putString("status", "already_initialized")
             })
             return
         }
 
         try {
             val context: Context = reactApplicationContext
-            
-            val baseOptions = BaseOptions.builder()
-                .setModelAssetPath("hand_landmarker.task")
-                .build()
-
-            val options = HandLandmarker.HandLandmarkerOptions.builder()
-                .setBaseOptions(baseOptions)
-                .setNumHands(2)
-                .setMinHandDetectionConfidence(0.3f)
-                .setMinHandPresenceConfidence(0.3f)
-                .setMinTrackingConfidence(0.4f)
-                .setRunningMode(RunningMode.LIVE_STREAM)
-                .setResultListener { result, _ -> 
-                    processResult(result)
-                }
-                .setErrorListener { error ->
-                    Log.e("HandLandmarks", "MediaPipe error: ${error.message}")
-                }
-                .build()
-
-            HandLandmarkerHolder.handLandmarker = HandLandmarker.createFromOptions(context, options)
-            
-            Log.d("HandLandmarks", "Model initialized successfully")
-            sendEvent("onHandLandmarksStatus", Arguments.createMap().apply { 
-                putString("status", "initialized") 
+            HandLandmarkerHolder.handLandmarker = buildLandmarker(context, useGpu = true)
+            Log.d("HandLandmarks", "Model initialized (GPU)")
+            sendEvent("onHandLandmarksStatus", Arguments.createMap().apply {
+                putString("status", "initialized")
             })
-        } catch (e: Exception) {
-            Log.e("HandLandmarks", "Init failed", e)
-            sendEvent("onHandLandmarksError", Arguments.createMap().apply { 
-                putString("error", e.message ?: "Unknown error") 
-            })
+        } catch (gpuError: Exception) {
+            Log.w("HandLandmarks", "GPU delegate failed (${gpuError.message}), falling back to CPU")
+            try {
+                val context: Context = reactApplicationContext
+                HandLandmarkerHolder.handLandmarker = buildLandmarker(context, useGpu = false)
+                Log.d("HandLandmarks", "Model initialized (CPU fallback)")
+                sendEvent("onHandLandmarksStatus", Arguments.createMap().apply {
+                    putString("status", "initialized")
+                })
+            } catch (e: Exception) {
+                Log.e("HandLandmarks", "Init failed", e)
+                sendEvent("onHandLandmarksError", Arguments.createMap().apply {
+                    putString("error", e.message ?: "Unknown error")
+                })
+            }
         }
+    }
+
+    private fun buildLandmarker(context: Context, useGpu: Boolean): HandLandmarker {
+        val baseOptions = BaseOptions.builder()
+            .setModelAssetPath("hand_landmarker.task")
+            .apply { if (useGpu) setDelegate(Delegate.GPU) }
+            .build()
+
+        val options = HandLandmarker.HandLandmarkerOptions.builder()
+            .setBaseOptions(baseOptions)
+            .setNumHands(2)
+            .setMinHandDetectionConfidence(0.5f)
+            .setMinHandPresenceConfidence(0.45f)
+            .setMinTrackingConfidence(0.5f)
+            .setRunningMode(RunningMode.LIVE_STREAM)
+            .setResultListener { result, _ -> processResult(result) }
+            .setErrorListener { error -> Log.e("HandLandmarks", "MediaPipe error: ${error.message}") }
+            .build()
+
+        return HandLandmarker.createFromOptions(context, options)
     }
 
     private fun processResult(result: HandLandmarkerResult) {

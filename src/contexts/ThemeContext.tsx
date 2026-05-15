@@ -1,6 +1,9 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../constants/theme';
+
+const THEME_STORAGE_KEY = 'user_theme';
 
 interface ThemeContextType {
   theme: 'light' | 'dark';
@@ -11,11 +14,23 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const colorScheme = useColorScheme();
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const systemColorScheme = useColorScheme();
+  const [theme, setTheme] = useState<'light' | 'dark'>(systemColorScheme ?? 'light');
+
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_STORAGE_KEY).then((saved) => {
+      if (saved === 'light' || saved === 'dark') {
+        setTheme(saved);
+      }
+    });
+  }, []);
 
   const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+    setTheme((prev) => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      AsyncStorage.setItem(THEME_STORAGE_KEY, next);
+      return next;
+    });
   };
 
   const colors = theme === 'light' ? Colors.light : Colors.dark;
