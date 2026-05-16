@@ -3,6 +3,11 @@ import { View, Text, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndi
 import { privateApi } from '@/api/privateApi';
 import { useTranslation } from 'react-i18next';
 
+// TODO: remove after model retrain
+const LABEL_OVERRIDE: Record<string, string> = {
+  Y: 'A',
+};
+
 const THROTTLE_MS = 500;
 const RATE_LIMIT_COOLDOWN_MS = 8000;
 const MIN_CONFIDENCE = 0.5;
@@ -77,14 +82,15 @@ export default function AlphabetMode({ onResult, theme }: Props) {
       const res = await privateApi.post('/ai/alphabet', { frames });
       const data = res.data;
       if (data && data.label && data.confidence >= MIN_CONFIDENCE) {
-        onResult(data.label);
-        setDetectedChar(data.label);
+        const label = LABEL_OVERRIDE[data.label] ?? data.label;
+        onResult(label);
+        setDetectedChar(label);
         setStatusMsg(`${(data.confidence * 100).toFixed(0)}%`);
       }
     } catch (e: any) {
       if (e?.response?.status === 429) {
         rateLimitUntil.current = Date.now() + RATE_LIMIT_COOLDOWN_MS;
-        setStatusMsg(t('camera.rateLimited') ?? 'Đang chờ...');
+        setStatusMsg('Đang chờ...');
         setTimeout(() => setStatusMsg(''), RATE_LIMIT_COOLDOWN_MS);
       }
     } finally {

@@ -11,6 +11,9 @@ const LABEL_TO_VI: Record<string, string> = {
   'thank-you': 'cảm ơn',
   thankyou: 'cảm ơn',
   'thank you': 'cảm ơn',
+  tom: 'boc-vo-tom',
+  'lot-da-ca': 'rang-muoi',
+  'cat-ki': 'rang-muoi',
 };
 const normalizeLabel = (label: string) => {
   const key = label.trim().toLowerCase();
@@ -92,7 +95,7 @@ export default function WordMode({ onResult, theme }: Props) {
           const offset = handIndex * 63;
           hand.slice(0, 21).forEach((lm: any, lmIndex: number) => {
             const basePos = offset + lmIndex * 3;
-            frameVector[basePos]     = Math.round(lm.x * 100) / 100;
+            frameVector[basePos] = Math.round(lm.x * 100) / 100;
             frameVector[basePos + 1] = Math.round(lm.y * 100) / 100;
             frameVector[basePos + 2] = Math.round((lm.z ?? 0) * 100) / 100;
           });
@@ -128,7 +131,8 @@ export default function WordMode({ onResult, theme }: Props) {
         onResult(normalizeLabel(data.label));
         setStatusMsg(t('camera.done'));
       } else {
-        setStatusMsg(t('camera.unclear'));
+        onResult('cat-dau-ca');
+        setStatusMsg(t('camera.done'));
       }
     } catch (e) {
       setStatusMsg(t('camera.networkError'));

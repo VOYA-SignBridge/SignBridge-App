@@ -39,12 +39,7 @@ export default function TranslationScreen() {
   }, [showCamera, mode]);
 
   const handleWordResult = (newWord: string) => {
-    setTranslatedText((prev) => {
-      const words = prev.trim().split(' ');
-      if (words.length > 0 && words[words.length - 1].toLowerCase() === newWord.toLowerCase())
-        return prev;
-      return prev ? `${prev} ${newWord}` : newWord;
-    });
+    setTranslatedText(newWord);
   };
 
   const handleLetterResult = (newChar: string) => {
@@ -56,7 +51,7 @@ export default function TranslationScreen() {
     setTranslatedText('');
   };
 
-  async function translateTextToVideo() {
+  function translateTextToVideo() {
     if (!textInput.trim()) return;
     Keyboard.dismiss();
 
@@ -142,15 +137,12 @@ export default function TranslationScreen() {
             /* Video card */
             <View style={[styles.videoCard, { backgroundColor: theme.cardBG }]}>
               <VideoSection url={videoUrl} />
-              <View style={[styles.videoFooter, { borderTopColor: theme.lightGray }]}>
-                <Ionicons name="volume-high-outline" size={16} color={theme.mediumGray} />
-                <Text style={[styles.videoWord, { color: theme.text }]} numberOfLines={1}>
-                  {textInput}
-                </Text>
-                <TouchableOpacity onPress={() => { setVideoUrl(null); setTextInput(''); }}>
-                  <Ionicons name="close-circle-outline" size={20} color={theme.mediumGray} />
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.videoCloseBtn}
+                onPress={() => { setVideoUrl(null); setTextInput(''); }}
+              >
+                <Ionicons name="close-circle" size={28} color="rgba(255,255,255,0.85)" />
+              </TouchableOpacity>
             </View>
           ) : (
             /* Placeholder card */
@@ -240,7 +232,6 @@ function VideoSection({ url }: { url: string }) {
       style={styles.videoPlayer}
       player={player}
       contentFit="contain"
-      allowsPictureInPicture
     />
   );
 }
@@ -303,18 +294,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
-  videoFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-  },
-  videoWord: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
+  videoCloseBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
   },
 
   // Bottom bar (giữ nguyên)

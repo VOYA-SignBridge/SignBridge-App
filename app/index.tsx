@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from '@/lib/supabase';
 import { useDictionaryStore } from '../app/data/useDictionaryStore';
-import { syncDictionary } from '../app/data/DictionaryService';
+import { loadLocalDictionary, syncInBackground } from '../app/data/DictionaryService';
 
 import SplashScreen from '../src/components/SplashScreen';
 import RegionSelection from '../src/components/RegionSelection';
@@ -38,9 +38,10 @@ export default function EntryScreen() {
       const savedRegion = await AsyncStorage.getItem('@user_region');
       if (savedRegion) {
         setRegion(savedRegion);
-        await syncDictionary(savedRegion); 
+        await loadLocalDictionary(savedRegion);  // fast: reads disk, sets isReady immediately
+        syncInBackground(savedRegion);            // non-blocking: downloads update if needed
       }
-      setIsDictLoading(false); 
+      setIsDictLoading(false);
     };
     initDict();
   }, []);
