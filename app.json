@@ -4,7 +4,7 @@
     "slug": "VOYA_App",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "signbridge",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -21,8 +21,8 @@
     "android": {
       "package": "com.nmnghi.VOYA_App",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#FFFFFF"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundImage": "./assets/images/adaptive-background.png"
       },
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "resize",
@@ -41,12 +41,13 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.jpg",
-          "imageWidth": 320,
+          "image": "./assets/images/splash-portrait.png",
+          "imageWidth": 120,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#0098E8",
           "dark": {
-            "backgroundColor": "#000000"
+            "image": "./assets/images/splash-portrait.png",
+            "backgroundColor": "#0098E8"
           }
         }
       ],
