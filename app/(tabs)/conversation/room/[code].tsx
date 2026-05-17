@@ -46,7 +46,18 @@ export default function RoomScreen() {
   const isDark = theme.background === '#000000' || theme.text === '#FFFFFF';
   const borderColor = isDark ? 'transparent' : '#E5E5E5';
 
-  const [participants, setParticipants] = useState<Record<string, Participant>>({});
+  const [participants, setParticipants] = useState<Record<string, Participant>>(() => {
+    if (!participant_id) return {};
+    return {
+      [String(participant_id)]: {
+        participant_id: Number(participant_id),
+        display_name: String(display_name),
+        role: String(role),
+        user_id: null,
+        joined_at: new Date().toISOString(),
+      },
+    };
+  });
   const [messages, setMessages] = useState<any[]>([]);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [text, setText] = useState("");
@@ -341,20 +352,18 @@ socket.onerror = (e) => {
           </View>
 
           <View style={styles.headerActions}>
-            <TouchableOpacity 
-              style={[styles.headerBtn, { backgroundColor: theme.primary }]} 
+            <TouchableOpacity
+              style={[styles.headerIconBtn, { backgroundColor: theme.primary + '18' }]}
               onPress={() => setShowQRModal(true)}
             >
-              <Text style={styles.headerBtnText}>{t('conversation.qrCode')}</Text>
+              <Ionicons name="qr-code-outline" size={22} color={theme.primary} />
             </TouchableOpacity>
-
-                         <TouchableOpacity 
-               style={[styles.headerBtn, { backgroundColor: theme.icon || '#999' }]}
-               onPress={handleLeaveRoom}
-             >
-               <Text style={styles.headerBtnText}>{t('conversation.leaveRoom')}</Text>
-             </TouchableOpacity>
-            
+            <TouchableOpacity
+              style={[styles.headerIconBtn, { backgroundColor: theme.error + '18' }]}
+              onPress={handleLeaveRoom}
+            >
+              <Ionicons name="exit-outline" size={22} color={theme.error} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -559,16 +568,6 @@ socket.onerror = (e) => {
                     );
                 }}
             />
-            <View style={styles.modalFooter}>
-             {isOwner && (
-  <TouchableOpacity 
-    style={[styles.endedBtn, { backgroundColor: theme.error }]} 
-    onPress={handleEndRoom}
-  >
-    <Text style={[styles.headerBtnText]}>{t('conversation.endRoom')}</Text>
-  </TouchableOpacity>
-)}
-</View>
         </SafeAreaView>
         
       </Modal>
@@ -608,7 +607,14 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+  },
+  headerIconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerBtn: {
     paddingHorizontal: 12,
