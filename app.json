@@ -39,18 +39,18 @@
     "plugins": [
       "expo-router",
       [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-portrait.png",
-          "imageWidth": 120,
-          "resizeMode": "contain",
-          "backgroundColor": "#0098E8",
-          "dark": {
-            "image": "./assets/images/splash-portrait.png",
-            "backgroundColor": "#0098E8"
-          }
-        }
-      ],
+  "expo-splash-screen",
+  {
+    "image": "./assets/images/adaptive-icon.png",
+    "imageWidth": 120,
+    "resizeMode": "contain",
+    "backgroundColor": "#0098E8",
+    "dark": {
+      "image": "./assets/images/adaptive-icon.png",
+      "backgroundColor": "#0098E8"
+    }
+  }
+],
       "react-native-vision-camera",
       [
         "expo-build-properties",
