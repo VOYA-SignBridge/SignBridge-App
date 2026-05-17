@@ -1,6 +1,6 @@
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -56,65 +56,75 @@ export default function SignInScreen() {
   const inputStyle = [styles.input, { borderColor: colors.primary, color: colors.text, backgroundColor: colors.textInputBG }];
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
+    <KeyboardAvoidingView
+      style={[styles.outer, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
 
-      <Text style={[styles.subtitle, { color: colors.mediumGray }]}>
-        {t('auth.loginSubtitle')}
-      </Text>
+        <Text style={[styles.subtitle, { color: colors.mediumGray }]}>
+          {t('auth.loginSubtitle')}
+        </Text>
 
-      <TextInput
-        placeholder={t('auth.email')}
-        style={inputStyle}
-        placeholderTextColor={colors.mediumGray}
-        selectionColor={colors.primary}
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        editable={!isLoading}
-      />
-
-      <View style={[styles.passwordWrapper, { borderColor: colors.primary, backgroundColor: colors.textInputBG }]}>
         <TextInput
-          placeholder={t('auth.password')}
-          style={[styles.passwordInput, { color: colors.text }]}
+          placeholder={t('auth.email')}
+          style={inputStyle}
           placeholderTextColor={colors.mediumGray}
           selectionColor={colors.primary}
-          secureTextEntry={!showPassword}
-          value={password}
-          onChangeText={setPassword}
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
           editable={!isLoading}
         />
-        <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
-          <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={colors.mediumGray} />
-        </TouchableOpacity>
-      </View>
 
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: isFormValid && !isLoading ? colors.primary : colors.mediumGray }]}
-        onPress={handleSignIn}
-        disabled={!isFormValid || isLoading}
-      >
-        {isLoading
-          ? <ActivityIndicator color="#fff" />
-          : <Text style={styles.buttonText}>{t('auth.signIn')}</Text>
-        }
-      </TouchableOpacity>
+        <View style={[styles.passwordWrapper, { borderColor: colors.primary, backgroundColor: colors.textInputBG }]}>
+          <TextInput
+            placeholder={t('auth.password')}
+            style={[styles.passwordInput, { color: colors.text }]}
+            placeholderTextColor={colors.mediumGray}
+            selectionColor={colors.primary}
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+            editable={!isLoading}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
+            <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={colors.mediumGray} />
+          </TouchableOpacity>
+        </View>
 
-      <Link href="/auth/signup" asChild>
-        <TouchableOpacity disabled={isLoading}>
-          <Text style={[styles.link, { color: colors.primary }]}>
-            {t('auth.noAccount')} <Text style={styles.boldText}>{t('auth.signUp')}</Text>
-          </Text>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: isFormValid && !isLoading ? colors.primary : colors.mediumGray }]}
+          onPress={handleSignIn}
+          disabled={!isFormValid || isLoading}
+        >
+          {isLoading
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.buttonText}>{t('auth.signIn')}</Text>
+          }
         </TouchableOpacity>
-      </Link>
-    </View>
+
+        <Link href="/auth/signup" asChild>
+          <TouchableOpacity disabled={isLoading}>
+            <Text style={[styles.link, { color: colors.primary }]}>
+              {t('auth.noAccount')} <Text style={styles.boldText}>{t('auth.signUp')}</Text>
+            </Text>
+          </TouchableOpacity>
+        </Link>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  outer: { flex: 1 },
+  container: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   logo: { height: 200, width: 200, marginBottom: 3 },
   subtitle: { fontSize: 14, textAlign: 'center', marginBottom: 23 },
   input: { width: '100%', borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 12, fontSize: 15 },

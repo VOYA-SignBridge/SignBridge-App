@@ -45,7 +45,6 @@ export default function RoomScreen() {
 
   const isDark = theme.background === '#000000' || theme.text === '#FFFFFF';
   const borderColor = isDark ? 'transparent' : '#E5E5E5';
-  const inputBackgroundColor = isDark ? '#1c1c1e' : '#F2F2F7';
 
   const [participants, setParticipants] = useState<Record<string, Participant>>({});
   const [messages, setMessages] = useState<any[]>([]);
@@ -449,13 +448,7 @@ socket.onerror = (e) => {
             <Ionicons name="mic" size={22} color={theme.primary} />
           </TouchableOpacity>
 
-          <View style={[
-            styles.inputWrapper,
-            {
-              backgroundColor: inputBackgroundColor,
-              borderColor: 'transparent'
-            }
-          ]}>
+          <View style={[styles.inputWrapper, { backgroundColor: theme.textInputBG }]}>
             <TextInput
   ref={chatInputRef}
   style={[styles.input, { color: theme.text }]}
@@ -472,7 +465,7 @@ socket.onerror = (e) => {
             style={[
               styles.sendButton,
               {
-                backgroundColor: text.trim() ? theme.primary : inputBackgroundColor,
+                backgroundColor: text.trim() ? theme.primary : theme.textInputBG,
                 shadowColor: text.trim() ? theme.primary : 'transparent',
                 elevation: text.trim() ? 5 : 0
               }
@@ -715,17 +708,17 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     height: 44,
     borderRadius: 22,
     paddingHorizontal: 16,
     marginRight: 8,
     marginLeft: 4,
-    justifyContent: 'center',
   },
   input: {
+    flex: 1,
     fontSize: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
     height: '100%',
   },
   sendButton: {
