@@ -1,6 +1,6 @@
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -16,6 +16,7 @@ export default function SignUpScreen() {
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const isFormValid = fullName.trim() !== '' && email.trim() !== '' && password !== '' && confirm !== '';
 
@@ -29,17 +30,24 @@ export default function SignUpScreen() {
       return;
     }
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
-    });
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName } },
+      });
 
-    if (error) {
-      Alert.alert(t('auth.error'), error.message);
-    } else {
-      Alert.alert(t('auth.success'), t('auth.registerSuccess'));
-      router.replace('/auth/signin');
+      if (error) {
+        Alert.alert(t('auth.error'), error.message);
+      } else {
+        Alert.alert(t('auth.success'), t('auth.registerSuccess'));
+        router.replace('/auth/signin');
+      }
+    } catch (e: any) {
+      Alert.alert(t('auth.error'), e?.message || t('auth.loginFailedMsg'));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -99,11 +107,14 @@ export default function SignUpScreen() {
       </View>
 
       <TouchableOpacity
-        style={[styles.button, { backgroundColor: isFormValid ? colors.primary : colors.avatarBG }]}
+        style={[styles.button, { backgroundColor: isFormValid && !isLoading ? colors.primary : colors.mediumGray }]}
         onPress={handleSignUp}
-        disabled={!isFormValid}
+        disabled={!isFormValid || isLoading}
       >
-        <Text style={styles.buttonText}>{t('auth.signUp')}</Text>
+        {isLoading
+          ? <ActivityIndicator color="#fff" />
+          : <Text style={styles.buttonText}>{t('auth.signUp')}</Text>
+        }
       </TouchableOpacity>
 
       <Link href="/auth/signin" asChild>
