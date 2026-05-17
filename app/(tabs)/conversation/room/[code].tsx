@@ -45,9 +45,19 @@ export default function RoomScreen() {
 
   const isDark = theme.background === '#000000' || theme.text === '#FFFFFF';
   const borderColor = isDark ? 'transparent' : '#E5E5E5';
-  const inputBackgroundColor = isDark ? '#1c1c1e' : '#F2F2F7';
 
-  const [participants, setParticipants] = useState<Record<string, Participant>>({});
+  const [participants, setParticipants] = useState<Record<string, Participant>>(() => {
+    if (!participant_id) return {};
+    return {
+      [String(participant_id)]: {
+        participant_id: Number(participant_id),
+        display_name: String(display_name),
+        role: String(role),
+        user_id: null,
+        joined_at: new Date().toISOString(),
+      },
+    };
+  });
   const [messages, setMessages] = useState<any[]>([]);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [text, setText] = useState("");
@@ -342,20 +352,18 @@ socket.onerror = (e) => {
           </View>
 
           <View style={styles.headerActions}>
-            <TouchableOpacity 
-              style={[styles.headerBtn, { backgroundColor: theme.primary }]} 
+            <TouchableOpacity
+              style={[styles.headerIconBtn, { backgroundColor: theme.primary + '18' }]}
               onPress={() => setShowQRModal(true)}
             >
-              <Text style={styles.headerBtnText}>{t('conversation.qrCode')}</Text>
+              <Ionicons name="qr-code-outline" size={22} color={theme.primary} />
             </TouchableOpacity>
-
-                         <TouchableOpacity 
-               style={[styles.headerBtn, { backgroundColor: theme.icon || '#999' }]}
-               onPress={handleLeaveRoom}
-             >
-               <Text style={styles.headerBtnText}>{t('conversation.leaveRoom')}</Text>
-             </TouchableOpacity>
-            
+            <TouchableOpacity
+              style={[styles.headerIconBtn, { backgroundColor: theme.error + '18' }]}
+              onPress={handleLeaveRoom}
+            >
+              <Ionicons name="exit-outline" size={22} color={theme.error} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -449,13 +457,7 @@ socket.onerror = (e) => {
             <Ionicons name="mic" size={22} color={theme.primary} />
           </TouchableOpacity>
 
-          <View style={[
-            styles.inputWrapper,
-            {
-              backgroundColor: inputBackgroundColor,
-              borderColor: 'transparent'
-            }
-          ]}>
+          <View style={[styles.inputWrapper, { backgroundColor: theme.textInputBG }]}>
             <TextInput
   ref={chatInputRef}
   style={[styles.input, { color: theme.text }]}
@@ -472,7 +474,7 @@ socket.onerror = (e) => {
             style={[
               styles.sendButton,
               {
-                backgroundColor: text.trim() ? theme.primary : inputBackgroundColor,
+                backgroundColor: text.trim() ? theme.primary : theme.textInputBG,
                 shadowColor: text.trim() ? theme.primary : 'transparent',
                 elevation: text.trim() ? 5 : 0
               }
@@ -566,16 +568,6 @@ socket.onerror = (e) => {
                     );
                 }}
             />
-            <View style={styles.modalFooter}>
-             {isOwner && (
-  <TouchableOpacity 
-    style={[styles.endedBtn, { backgroundColor: theme.error }]} 
-    onPress={handleEndRoom}
-  >
-    <Text style={[styles.headerBtnText]}>{t('conversation.endRoom')}</Text>
-  </TouchableOpacity>
-)}
-</View>
         </SafeAreaView>
         
       </Modal>
@@ -615,7 +607,14 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
+  },
+  headerIconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerBtn: {
     paddingHorizontal: 12,
@@ -715,17 +714,17 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     height: 44,
     borderRadius: 22,
     paddingHorizontal: 16,
     marginRight: 8,
     marginLeft: 4,
-    justifyContent: 'center',
   },
   input: {
+    flex: 1,
     fontSize: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
     height: '100%',
   },
   sendButton: {

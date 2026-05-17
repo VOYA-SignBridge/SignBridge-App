@@ -64,7 +64,6 @@ export default function AlphabetMode({ onResult, theme }: Props) {
         });
 
         if (singleFramePoints.length === 21) {
-          lastApiCall.current = now;
           sendToBackend([singleFramePoints]);
         }
       }
@@ -94,6 +93,7 @@ export default function AlphabetMode({ onResult, theme }: Props) {
         setTimeout(() => setStatusMsg(''), RATE_LIMIT_COOLDOWN_MS);
       }
     } finally {
+      lastApiCall.current = Date.now();
       isSending.current = false;
       setIsProcessing(false);
     }

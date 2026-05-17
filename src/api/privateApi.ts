@@ -19,3 +19,14 @@ privateApi.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+
+// Token hết hạn → xóa token cũ để lần sau không gửi token sai
+privateApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error?.response?.status === 401) {
+      await AsyncStorage.removeItem("access_token");
+    }
+    return Promise.reject(error);
+  }
+);

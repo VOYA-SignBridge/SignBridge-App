@@ -12,6 +12,7 @@ const LABEL_TO_VI: Record<string, string> = {
   thankyou: 'cảm ơn',
   'thank you': 'cảm ơn',
   tom: 'boc-vo-tom',
+  'danh-vay-ca': 'rang-muoi',
   'lot-da-ca': 'rang-muoi',
   'cat-ki': 'rang-muoi',
 };

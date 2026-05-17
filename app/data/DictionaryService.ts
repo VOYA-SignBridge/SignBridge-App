@@ -37,8 +37,15 @@ export const syncInBackground = (region: string): void => {
       const localVersionStr = await AsyncStorage.getItem(VERSION_KEY);
       const localVersion = localVersionStr ? parseInt(localVersionStr, 10) : 0;
 
-      const response = await fetch(`${API_URL}/admin/check-version/${region}`);
-      if (!response.ok) return;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8_000);
+      let response: Response;
+      try {
+        response = await fetch(`${API_URL}/admin/check-version/${region}`, { signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+      if (!response!.ok) return;
       const server = await response.json();
 
       if (server.latest_version <= localVersion && localVersion !== 0) {
