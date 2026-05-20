@@ -348,4 +348,24 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 16,
   },
+<<<<<<< HEAD
+=======
+  codeText: {
+    fontSize: 32,
+    fontWeight: "800",
+    letterSpacing: 3,
+    marginBottom: 24,
+  },
+  closeButton: {
+    width: '100%',
+    height: 50,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+>>>>>>> 505e6e50b6f21a80d057bb83e9f78258d1cbc59c
 });

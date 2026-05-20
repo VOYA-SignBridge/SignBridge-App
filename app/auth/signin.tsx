@@ -136,3 +136,4 @@ const styles = StyleSheet.create({
   link: { marginTop: 16 },
   boldText: { fontWeight: 'bold' },
 });
+

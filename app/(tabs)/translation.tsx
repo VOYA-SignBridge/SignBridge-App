@@ -40,6 +40,7 @@ export default function TranslationScreen() {
 
   const handleWordResult = (newWord: string) => {
     setTranslatedText(newWord);
+    setTranslatedText(newWord);
   };
 
   const handleLetterResult = (newChar: string) => {
@@ -427,3 +428,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+

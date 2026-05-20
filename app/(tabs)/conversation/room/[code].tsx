@@ -325,7 +325,7 @@ socket.onerror = (e) => {
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
@@ -495,7 +495,7 @@ socket.onerror = (e) => {
 
       <Modal visible={showCamera} animationType="slide" onRequestClose={() => setShowCamera(false)}>
         <SignLanguageCamera
-          theme={theme}
+          //theme={theme}
         />
         <TouchableOpacity 
                         onPress={closeCamera} 

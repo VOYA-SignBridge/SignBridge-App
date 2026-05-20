@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator, Platform } from 'react-native';
 import { privateApi } from '@/api/privateApi';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -167,7 +167,7 @@ export default function WordMode({ onResult, theme }: Props) {
           (isRecording || countdown > 0) && styles.recordingBtn,
         ]}
         onPress={handlePressRecord}
-        disabled={isRecording || isProcessing || countdown > 0}
+        disabled={isProcessing}
       >
         {isProcessing ? (
           <ActivityIndicator color="white" size="large" />
