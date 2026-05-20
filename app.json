@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SignBridge",
-    "slug": "VOYA_App",
+    "slug": "signbridge",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -78,9 +78,8 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c1192456-53d7-4aa8-b783-5f29ed7fc62c"
+        "projectId": "b45dc617-157e-465c-a68e-ca929045a65b"
       }
     },
-    "owner": "center1806"
-  }
+"owner": "ctu-signbridge"  }
 }
