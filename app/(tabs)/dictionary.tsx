@@ -16,7 +16,7 @@ import { useFocusEffect } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { MOET_DATA } from '@/data/dictionaryData'; 
+import { MOET_DATA } from '../data/dictionaryData'; 
 
 type DictionaryItem = {
   id: string;
