@@ -1,4 +1,3 @@
-// app/index.tsx
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
@@ -13,62 +12,59 @@ import RegionSelection from '../src/components/RegionSelection';
 
 export default function EntryScreen() {
   const [session, setSession] = useState<Session | null>(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true); 
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const { isReady, region, setRegion } = useDictionaryStore();
   const [isDictLoading, setIsDictLoading] = useState(true);
 
-  // KIỂM TRA ĐĂNG NHẬP
   useEffect(() => {
     supabase.auth.getSession()
       .then(({ data: { session } }) => setSession(session))
-      .catch(() => {})
+      .catch((error) => {
+        console.warn('[Auth] getSession failed', error);
+      })
       .finally(() => setIsAuthLoading(false));
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
     });
+
     return () => authListener.subscription.unsubscribe();
   }, []);
 
-  // KIỂM TRA DỮ LIỆU & VÙNG MIỀN
   useEffect(() => {
     const initDict = async () => {
-      // Uncomment dòng dưới để test luồng như máy mới hoàn toàn
-      // await AsyncStorage.clear(); 
-
-      const savedRegion = await AsyncStorage.getItem('@user_region');
-      if (savedRegion) {
-        setRegion(savedRegion);
-        await loadLocalDictionary(savedRegion);  // fast: reads disk, sets isReady immediately
-        syncInBackground(savedRegion);            // non-blocking: downloads update if needed
+      try {
+        const savedRegion = await AsyncStorage.getItem('@user_region');
+        if (savedRegion) {
+          setRegion(savedRegion);
+          await loadLocalDictionary(savedRegion);
+          syncInBackground(savedRegion);
+        }
+      } catch (error) {
+        console.warn('[InitDict] Failed to initialize dictionary', error);
+      } finally {
+        setIsDictLoading(false);
       }
-      setIsDictLoading(false);
     };
+
     initDict();
-  }, []);
+  }, [setRegion]);
 
-  // --- TRẠM KIỂM SOÁT LUỒNG ---
-
-  // Trạm 1: Đang check Auth hoặc đang check Ổ cứng -> Hiện Splash
   if (isAuthLoading || isDictLoading) {
     return <SplashScreen />;
   }
 
-  // Trạm 2: Đã xong bước 1 mà region vẫn null (Người dùng mới) -> Hiện Chọn vùng
   if (!region) {
     return <RegionSelection />;
   }
 
-  // Trạm 3: Đã chọn vùng nhưng syncDictionary đang tải JSON chưa xong -> Hiện Splash
   if (!isReady) {
     return <SplashScreen />;
   }
 
-  // Trạm 4: Đã có Region + JSON xong rồi, nhưng chưa Login -> Đẩy sang Sign In
   if (!session) {
     return <Redirect href="/auth/signin" />;
   }
 
-  // Trạm 5: Thành công toàn tập -> Vào App
   return <Redirect href="/(tabs)/translation" />;
 }
