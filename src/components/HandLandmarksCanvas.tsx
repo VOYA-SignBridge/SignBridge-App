@@ -50,8 +50,13 @@ const HandLandmarksCanvas: React.FC<Props> = ({ landmarks, width, height }) => {
       
       HAND_CONNECTIONS.forEach(([start, end]) => {
         if (hand[start] && hand[end]) {
-          path.moveTo(hand[start].x * width, hand[start].y * height);
-          path.lineTo(hand[end].x * width, hand[end].y * height);
+          // fix reverse hand
+          const startX = (1 - hand[start].x) * width;
+          const startY = hand[start].y * height;
+          const endX = (1 - hand[end].x) * width;
+          const endY = hand[end].y * height;
+
+          path.moveTo(startX, startY);
         }
       });
       
@@ -59,7 +64,8 @@ const HandLandmarksCanvas: React.FC<Props> = ({ landmarks, width, height }) => {
 
       // Tạo circles cho các điểm
       hand.forEach((point, idx) => {
-        const cx = point.x * width;
+        // fix reverse hand
+        const cx = (1 - point.x) * width;
         const cy = point.y * height;
         
         let color: string;
