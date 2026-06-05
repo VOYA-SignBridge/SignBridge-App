@@ -35,3 +35,6 @@ export const API_URL = "https://se.cit.ctu.edu.vn/signbridge/api/v1"
 export const WS_BASE = "wss://se.cit.ctu.edu.vn:8443/signbridge";
 //export const API_URL = "https://signbridgeapi.tamdevx.id.vn/api/v1";
 //export const WS_BASE = "wss://signbridgeapi.tamdevx.id.vn";
+
+export const API_GITHUB = "https://api.github.com/repos/fwy13/bundle_signbride_test/releases";
+export const current_OTA_version = "0.1.0";

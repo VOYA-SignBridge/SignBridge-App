@@ -21,6 +21,7 @@ import WordMode from '@/components/translation/WordMode';
 import AlphabetMode from '@/components/translation/AlphabetMode';
 import { useDictionaryStore } from '../data/useDictionaryStore';
 import { getSignVideoUrl } from '../utils/CloudinaryHelper';
+import OtaUpdaterModal from '@/components/OtaUpdaterModal';
 
 export default function TranslationScreen() {
   const { colors: theme } = useTheme();
@@ -73,7 +74,6 @@ export default function TranslationScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: 'black' }}>
         <SignLanguageCamera />
-
         <TouchableOpacity style={styles.closeBtn} onPress={closeCamera}>
           <Ionicons name="close" size={28} color="#ffffff" />
         </TouchableOpacity>
@@ -181,7 +181,7 @@ export default function TranslationScreen() {
           <TouchableOpacity style={styles.iconBtnOutside}>
             <Ionicons name="mic" size={22} color={theme.primary} />
           </TouchableOpacity>
-
+          <OtaUpdaterModal />
           <View style={[styles.inputWrapper, { backgroundColor: inputBg }]}>
             <TextInput
               style={[styles.textInput, { color: theme.text }]}
