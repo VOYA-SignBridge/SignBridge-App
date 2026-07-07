@@ -42,7 +42,7 @@ export default function SignLanguageCamera() {
   const device = front ?? back;
   const format = useCameraFormat(device, [
     { videoResolution: { width: 640, height: 480 } },
-    { fps: 10 },
+    { fps: 30 },
   ]);
 
   const [handLandmarks, setHandLandmarks] = useState<LandmarkPoint[][]>([]);
@@ -101,7 +101,7 @@ export default function SignLanguageCamera() {
  const frameProcessor = useFrameProcessor((frame) => {
   'worklet';
 
-  runAtTargetFps(8, () => {
+  runAtTargetFps(30, () => {
     if (!plugin) return;
 
     const landmarks = plugin.call(frame);
@@ -130,7 +130,7 @@ export default function SignLanguageCamera() {
         device={device}
         isActive={true}
         format={format}
-        fps={10}
+        fps={30}
         frameProcessor={frameProcessor}
         pixelFormat="yuv"
         resizeMode="cover"

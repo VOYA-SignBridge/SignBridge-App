@@ -31,6 +31,7 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
         private const val TCN_SEQUENCE_LENGTH = 60
         private const val TCN_FEATURE_DIM = 126
         private const val TCN_CLASS_COUNT = 42
+        private const val MIRROR_TCN_INPUT = true
         
         init {
             try {
@@ -319,7 +320,16 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     handednessList.forEachIndexed { idx, categories ->
         if (categories.isEmpty()) return@forEachIndexed
 
-        val handedness = categories[0].categoryName().lowercase()
+        val detectedHandedness = categories[0].categoryName().lowercase()
+        val handedness = if (MIRROR_TCN_INPUT) {
+            when (detectedHandedness) {
+                "left" -> "right"
+                "right" -> "left"
+                else -> detectedHandedness
+            }
+        } else {
+            detectedHandedness
+        }
         val target = when (handedness) {
             "left" -> left
             "right" -> right
@@ -329,7 +339,7 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
         val landmarks = result.landmarks()[idx]
         for (i in 0 until 21) {
             val lm = landmarks[i]
-            target[i * 3] = lm.x()
+            target[i * 3] = if (MIRROR_TCN_INPUT) 1f - lm.x() else lm.x()
             target[i * 3 + 1] = lm.y()
             target[i * 3 + 2] = lm.z()
         }
