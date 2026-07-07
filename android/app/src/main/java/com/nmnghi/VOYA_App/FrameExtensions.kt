@@ -13,20 +13,7 @@ fun ImageProxy.toMPImage(): MPImage {
 }
 
 private fun ImageProxy.toBitmapWithRotation(): Bitmap {
-    val yBuffer = planes[0].buffer
-    val uBuffer = planes[1].buffer
-    val vBuffer = planes[2].buffer
-
-    val ySize = yBuffer.remaining()
-    val uSize = uBuffer.remaining()
-    val vSize = vBuffer.remaining()
-
-    val nv21 = ByteArray(ySize + uSize + vSize)
-
-    // copy Y, V, U vào mảng NV21
-    yBuffer.get(nv21, 0, ySize)
-    vBuffer.get(nv21, ySize, vSize)
-    uBuffer.get(nv21, ySize + vSize, uSize)
+    val nv21 = toNv21()
 
     val argb = IntArray(width * height)
     decodeYUV420SP(argb, nv21, width, height)
@@ -59,6 +46,42 @@ private fun ImageProxy.toBitmapWithRotation(): Bitmap {
     }
 
     return bitmap
+}
+
+private fun ImageProxy.toNv21(): ByteArray {
+    val yPlane = planes[0]
+    val uPlane = planes[1]
+    val vPlane = planes[2]
+    val nv21 = ByteArray(width * height * 3 / 2)
+
+    val yBuffer = yPlane.buffer.duplicate()
+    val yRowStride = yPlane.rowStride
+
+    var outputOffset = 0
+    for (row in 0 until height) {
+        yBuffer.position(row * yRowStride)
+        yBuffer.get(nv21, outputOffset, width)
+        outputOffset += width
+    }
+
+    val uBuffer = uPlane.buffer.duplicate()
+    val vBuffer = vPlane.buffer.duplicate()
+    val uRowStride = uPlane.rowStride
+    val vRowStride = vPlane.rowStride
+    val uPixelStride = uPlane.pixelStride
+    val vPixelStride = vPlane.pixelStride
+    val chromaWidth = width / 2
+    val chromaHeight = height / 2
+
+    outputOffset = width * height
+    for (row in 0 until chromaHeight) {
+        for (col in 0 until chromaWidth) {
+            nv21[outputOffset++] = vBuffer.get(row * vRowStride + col * vPixelStride)
+            nv21[outputOffset++] = uBuffer.get(row * uRowStride + col * uPixelStride)
+        }
+    }
+
+    return nv21
 }
 
 // Chuyển NV21 (YUV420) → RGB
