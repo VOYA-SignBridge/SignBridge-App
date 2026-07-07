@@ -147,26 +147,16 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
 
         try {
             val context: Context = reactApplicationContext
-            HandLandmarkerHolder.handLandmarker = buildLandmarker(context, useGpu = true)
-            Log.d("HandLandmarks", "Model initialized (GPU)")
+            HandLandmarkerHolder.handLandmarker = buildLandmarker(context, useGpu = false)
+            Log.d("HandLandmarks", "Model initialized (CPU)")
             sendEvent("onHandLandmarksStatus", Arguments.createMap().apply {
                 putString("status", "initialized")
             })
-        } catch (gpuError: Exception) {
-            Log.w("HandLandmarks", "GPU delegate failed (${gpuError.message}), falling back to CPU")
-            try {
-                val context: Context = reactApplicationContext
-                HandLandmarkerHolder.handLandmarker = buildLandmarker(context, useGpu = false)
-                Log.d("HandLandmarks", "Model initialized (CPU fallback)")
-                sendEvent("onHandLandmarksStatus", Arguments.createMap().apply {
-                    putString("status", "initialized")
-                })
-            } catch (e: Exception) {
-                Log.e("HandLandmarks", "Init failed", e)
-                sendEvent("onHandLandmarksError", Arguments.createMap().apply {
-                    putString("error", e.message ?: "Unknown error")
-                })
-            }
+        } catch (e: Exception) {
+            Log.e("HandLandmarks", "Init failed", e)
+            sendEvent("onHandLandmarksError", Arguments.createMap().apply {
+                putString("error", e.message ?: "Unknown error")
+            })
         }
     }
 

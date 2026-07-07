@@ -5,6 +5,9 @@ import android.graphics.Matrix
 import androidx.camera.core.ImageProxy
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.framework.image.MPImage
+import kotlin.math.max
+
+private const val MAX_MEDIAPIPE_BITMAP_SIDE = 640
 
 // Chuyển ImageProxy (YUV) → MPImage (RGB) + tự xoay theo rotation của camera
 fun ImageProxy.toMPImage(): MPImage {
@@ -42,6 +45,17 @@ private fun ImageProxy.toBitmapWithRotation(): Bitmap {
             bitmap, 0, 0,
             bitmap.width, bitmap.height,
             matrix, true
+        )
+    }
+
+    val longestSide = max(bitmap.width, bitmap.height)
+    if (longestSide > MAX_MEDIAPIPE_BITMAP_SIDE) {
+        val scale = MAX_MEDIAPIPE_BITMAP_SIDE.toFloat() / longestSide.toFloat()
+        bitmap = Bitmap.createScaledBitmap(
+            bitmap,
+            (bitmap.width * scale).toInt(),
+            (bitmap.height * scale).toInt(),
+            true
         )
     }
 

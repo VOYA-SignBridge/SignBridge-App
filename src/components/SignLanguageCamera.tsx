@@ -11,6 +11,7 @@ import {
 import {
   Camera,
   useCameraDevice,
+  useCameraFormat,
   useCameraPermission,
   VisionCameraProxy,
   useFrameProcessor,
@@ -39,6 +40,10 @@ export default function SignLanguageCamera() {
   const front = useCameraDevice('front');
   const back = useCameraDevice('back');
   const device = front ?? back;
+  const format = useCameraFormat(device, [
+    { videoResolution: { width: 640, height: 480 } },
+    { fps: 10 },
+  ]);
 
   const [handLandmarks, setHandLandmarks] = useState<LandmarkPoint[][]>([]);
   const [ready, setReady] = useState(false);
@@ -96,7 +101,7 @@ export default function SignLanguageCamera() {
  const frameProcessor = useFrameProcessor((frame) => {
   'worklet';
 
-  runAtTargetFps(12, () => {
+  runAtTargetFps(8, () => {
     if (!plugin) return;
 
     const landmarks = plugin.call(frame);
@@ -124,6 +129,8 @@ export default function SignLanguageCamera() {
         style={StyleSheet.absoluteFill}
         device={device}
         isActive={true}
+        format={format}
+        fps={10}
         frameProcessor={frameProcessor}
         pixelFormat="yuv"
         resizeMode="cover"
