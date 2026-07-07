@@ -1,25 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator, Platform } from 'react-native';
-import { privateApi } from '@/api/privateApi';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
-const SEQ_LEN = 24;
-const MIN_CONFIDENCE = 0.55;
-const LABEL_TO_VI: Record<string, string> = {
-  hello: 'xin chào',
-  'thank-you': 'cảm ơn',
-  thankyou: 'cảm ơn',
-  'thank you': 'cảm ơn',
-  tom: 'boc-vo-tom',
-  'danh-vay-ca': 'rang-muoi',
-  'lot-da-ca': 'rang-muoi',
-  'cat-ki': 'rang-muoi',
-};
-const normalizeLabel = (label: string) => {
-  const key = label.trim().toLowerCase();
-  return LABEL_TO_VI[key] || label;
-};
+const SEQ_LEN = 60;
+const FEATURE_DIM = 126;
 const { HandLandmarks } = NativeModules;
 const eventEmitter = new NativeEventEmitter(HandLandmarks);
 
@@ -37,7 +22,7 @@ export default function WordMode({ onResult, theme }: Props) {
   const [hasHand, setHasHand] = useState(false);
 
   const keypointsBuffer = useRef<number[][]>([]);
-  const isSending = useRef(false);
+  const isPredicting = useRef(false);
   const lastEventTime = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Sync ref: listener checks this directly — no stale closure, no listener gap when isRecording toggles
@@ -77,30 +62,23 @@ export default function WordMode({ onResult, theme }: Props) {
   // Empty deps: single subscription for component lifetime, no listener gap on recording toggle
   useEffect(() => {
     const sub = eventEmitter.addListener('onHandLandmarksDetected', (event) => {
+      setHasHand(!!event.landmarks && event.landmarks.length > 0);
+    });
+
+    return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
+    const sub = eventEmitter.addListener('onHandFrame126', (event) => {
       const now = Date.now();
       if (now - lastEventTime.current < 30) return;
       lastEventTime.current = now;
 
-      if (!event.landmarks || event.landmarks.length === 0) {
-        setHasHand(false);
-        return;
-      }
-      setHasHand(true);
-
       if (!isRecordingRef.current) return;
 
       try {
-        const handsDetected = event.landmarks.slice(0, 2);
-        let frameVector = new Array(126).fill(0);
-        handsDetected.forEach((hand: any[], handIndex: number) => {
-          const offset = handIndex * 63;
-          hand.slice(0, 21).forEach((lm: any, lmIndex: number) => {
-            const basePos = offset + lmIndex * 3;
-            frameVector[basePos] = Math.round(lm.x * 100) / 100;
-            frameVector[basePos + 1] = Math.round(lm.y * 100) / 100;
-            frameVector[basePos + 2] = Math.round((lm.z ?? 0) * 100) / 100;
-          });
-        });
+        const frameVector = Array.from(event.frame ?? []) as number[];
+        if (frameVector.length !== FEATURE_DIM) return;
 
         const currentBuffer = keypointsBuffer.current;
         currentBuffer.push(frameVector);
@@ -110,7 +88,7 @@ export default function WordMode({ onResult, theme }: Props) {
           isRecordingRef.current = false;
           setIsRecording(false);
           const framesToSend = currentBuffer.slice(0, SEQ_LEN);
-          sendToBackend(framesToSend);
+          predictLocal(framesToSend);
           keypointsBuffer.current = [];
         }
       } catch (error) { console.error(error); }
@@ -119,26 +97,24 @@ export default function WordMode({ onResult, theme }: Props) {
     return () => sub.remove();
   }, []);
 
-  const sendToBackend = async (frames: number[][]) => {
-    if (isSending.current) return;
-    isSending.current = true;
+  const predictLocal = async (frames: number[][]) => {
+    if (isPredicting.current) return;
+    isPredicting.current = true;
     setIsProcessing(true);
     setStatusMsg(t('camera.translating'));
 
     try {
-      const res = await privateApi.post('/ai/tcn-recognize', { frames });
-      const data = res.data;
-      if (data.label && data.probability >= MIN_CONFIDENCE) {
-        onResult(normalizeLabel(data.label));
+      const data = await HandLandmarks.predictTcn(frames);
+      if (data?.label) {
+        onResult(data.label);
         setStatusMsg(t('camera.done'));
       } else {
-        onResult('cat-dau-ca');
-        setStatusMsg(t('camera.done'));
+        setStatusMsg(t('translation.noData'));
       }
     } catch (e) {
       setStatusMsg(t('camera.networkError'));
     } finally {
-      isSending.current = false;
+      isPredicting.current = false;
       setIsProcessing(false);
       setTimeout(() => {
         if (!isRecordingRef.current) setStatusMsg(t('camera.pressToStart'));

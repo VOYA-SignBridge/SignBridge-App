@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator } from 'react-native';
-import { privateApi } from '@/api/privateApi';
 import { useTranslation } from 'react-i18next';
 
-// TODO: remove after model retrain
-const LABEL_OVERRIDE: Record<string, string> = {
-  Y: 'A',
-};
-
 const THROTTLE_MS = 500;
-const RATE_LIMIT_COOLDOWN_MS = 8000;
-const MIN_CONFIDENCE = 0.5;
+const SEQ_LEN = 60;
+const FEATURE_DIM = 126;
+const MIN_CONFIDENCE = 0.2;
 
 const { HandLandmarks } = NativeModules;
 const eventEmitter = new NativeEventEmitter(HandLandmarks);
@@ -27,74 +22,69 @@ export default function AlphabetMode({ onResult, theme }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasHand, setHasHand] = useState(false);
 
-  const isSending = useRef(false);
+  const frameBuffer = useRef<number[][]>([]);
+  const isPredicting = useRef(false);
   const lastEventTime = useRef(0);
-  const lastApiCall = useRef(0);
-  const rateLimitUntil = useRef(0); // timestamp until which we pause sending after 429
+  const lastPredictionTime = useRef(0);
 
   useEffect(() => {
     const sub = eventEmitter.addListener('onHandLandmarksDetected', (event) => {
-      const now = Date.now();
-      if (now - lastEventTime.current < 50) return;
-      lastEventTime.current = now;
-
       if (!event.landmarks || event.landmarks.length === 0) {
         setHasHand(false);
         setDetectedChar('');
+        frameBuffer.current = [];
         return;
       }
 
       setHasHand(true);
+    });
 
-      // Skip sending during 429 cooldown
-      if (now < rateLimitUntil.current) return;
+    return () => sub.remove();
+  }, []);
 
-      if (!isSending.current && (now - lastApiCall.current > THROTTLE_MS)) {
-        const handsDetected = event.landmarks.slice(0, 2);
-        if (handsDetected.length === 0) return;
+  useEffect(() => {
+    const sub = eventEmitter.addListener('onHandFrame126', (event) => {
+      const now = Date.now();
+      if (now - lastEventTime.current < 50) return;
+      lastEventTime.current = now;
 
-        const hand = handsDetected[0];
-        const singleFramePoints: number[][] = [];
+      const frameVector = Array.from(event.frame ?? []) as number[];
+      if (frameVector.length !== FEATURE_DIM) return;
 
-        hand.slice(0, 21).forEach((lm: any) => {
-          const x = Math.round(lm.x * 1000) / 1000;
-          const y = Math.round(lm.y * 1000) / 1000;
-          const z = Math.round((lm.z ?? 0) * 1000) / 1000;
-          singleFramePoints.push([x, y, z]);
-        });
+      frameBuffer.current.push(frameVector);
+      if (frameBuffer.current.length > SEQ_LEN) frameBuffer.current.shift();
 
-        if (singleFramePoints.length === 21) {
-          sendToBackend([singleFramePoints]);
-        }
+      if (
+        frameBuffer.current.length === SEQ_LEN &&
+        !isPredicting.current &&
+        now - lastPredictionTime.current > THROTTLE_MS
+      ) {
+        predictLocal(frameBuffer.current.slice());
       }
     });
 
     return () => sub.remove();
   }, []);
 
-  const sendToBackend = async (frames: number[][][]) => {
-    if (isSending.current) return;
-    isSending.current = true;
+  const predictLocal = async (frames: number[][]) => {
+    if (isPredicting.current) return;
+    isPredicting.current = true;
     setIsProcessing(true);
 
     try {
-      const res = await privateApi.post('/ai/alphabet', { frames });
-      const data = res.data;
-      if (data && data.label && data.confidence >= MIN_CONFIDENCE) {
-        const label = LABEL_OVERRIDE[data.label] ?? data.label;
+      const data = await HandLandmarks.predictTcn(frames);
+      const label = String(data?.label ?? '');
+
+      if (/^[A-Z]$/.test(label) && data.confidence >= MIN_CONFIDENCE) {
         onResult(label);
         setDetectedChar(label);
         setStatusMsg(`${(data.confidence * 100).toFixed(0)}%`);
       }
-    } catch (e: any) {
-      if (e?.response?.status === 429) {
-        rateLimitUntil.current = Date.now() + RATE_LIMIT_COOLDOWN_MS;
-        setStatusMsg('Đang chờ...');
-        setTimeout(() => setStatusMsg(''), RATE_LIMIT_COOLDOWN_MS);
-      }
+    } catch (e) {
+      setStatusMsg(t('camera.networkError'));
     } finally {
-      lastApiCall.current = Date.now();
-      isSending.current = false;
+      lastPredictionTime.current = Date.now();
+      isPredicting.current = false;
       setIsProcessing(false);
     }
   };

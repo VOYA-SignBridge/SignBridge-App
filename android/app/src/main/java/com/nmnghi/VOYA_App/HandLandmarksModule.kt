@@ -9,8 +9,14 @@ import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import com.facebook.react.modules.core.DeviceEventManagerModule
+import org.json.JSONObject
+import org.tensorflow.lite.Interpreter
+import java.io.FileInputStream
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.exp
 import kotlin.math.round
 import com.nmnghi.VOYA_App.HandLandmarkerHolder
 
@@ -20,6 +26,11 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     companion object {
         private const val THROTTLE_INTERVAL_MS = 50L
         private const val NO_HAND_DEBOUNCE_MS = 150L
+        private const val TCN_MODEL_FILE = "tcn_20260624_232642.tflite"
+        private const val TCN_LABELS_FILE = "tcn_20260624_232642_display_labels.json"
+        private const val TCN_SEQUENCE_LENGTH = 60
+        private const val TCN_FEATURE_DIM = 126
+        private const val TCN_CLASS_COUNT = 42
         
         init {
             try {
@@ -35,6 +46,9 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     private val lastHandDetectedTime = AtomicLong(0L)
     private val isProcessing = AtomicBoolean(false)
     private val frameCount = AtomicLong(0L)
+    private val tcnLock = Any()
+    private var tcnInterpreter: Interpreter? = null
+    private var tcnLabels: Map<Int, String> = emptyMap()
 
     override fun getName() = "HandLandmarks"
 
@@ -43,6 +57,71 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
 
     @ReactMethod
     fun removeListeners(count: Int) {}
+
+    @ReactMethod
+    fun predictTcn(frames: ReadableArray, promise: Promise) {
+        try {
+            if (frames.size() != TCN_SEQUENCE_LENGTH) {
+                promise.reject(
+                    "INVALID_TCN_INPUT",
+                    "Expected $TCN_SEQUENCE_LENGTH frames, received ${frames.size()}"
+                )
+                return
+            }
+
+            val input = Array(1) { Array(TCN_SEQUENCE_LENGTH) { FloatArray(TCN_FEATURE_DIM) } }
+
+            for (frameIndex in 0 until TCN_SEQUENCE_LENGTH) {
+                val frame = frames.getArray(frameIndex)
+                    ?: throw IllegalArgumentException("Frame $frameIndex is null")
+
+                if (frame.size() != TCN_FEATURE_DIM) {
+                    throw IllegalArgumentException(
+                        "Frame $frameIndex must contain $TCN_FEATURE_DIM values, received ${frame.size()}"
+                    )
+                }
+
+                for (featureIndex in 0 until TCN_FEATURE_DIM) {
+                    input[0][frameIndex][featureIndex] = frame.getDouble(featureIndex).toFloat()
+                }
+            }
+
+            val output = Array(1) { FloatArray(TCN_CLASS_COUNT) }
+            val inputs = hashMapOf<String, Any>(
+                "inputs" to input,
+                "lengths" to intArrayOf(TCN_SEQUENCE_LENGTH)
+            )
+            val outputs = hashMapOf<String, Any>("output_0" to output)
+
+            synchronized(tcnLock) {
+                ensureTcnInterpreter().runSignature(inputs, outputs, "serving_default")
+            }
+
+            val logits = output[0]
+            var classIndex = 0
+            var maxLogit = logits[0]
+            for (i in 1 until logits.size) {
+                if (logits[i] > maxLogit) {
+                    maxLogit = logits[i]
+                    classIndex = i
+                }
+            }
+
+            var sumExp = 0.0
+            for (logit in logits) {
+                sumExp += exp((logit - maxLogit).toDouble())
+            }
+
+            val result = Arguments.createMap()
+            result.putInt("classIndex", classIndex)
+            result.putString("label", tcnLabels[classIndex] ?: classIndex.toString())
+            result.putDouble("confidence", 1.0 / sumExp)
+            promise.resolve(result)
+        } catch (e: Exception) {
+            Log.e("HandLandmarks", "TCN prediction failed", e)
+            promise.reject("TCN_PREDICTION_FAILED", e.message, e)
+        }
+    }
 
     private fun sendEvent(eventName: String, params: WritableMap) {
         if (reactApplicationContext.hasActiveCatalystInstance()) {
@@ -109,6 +188,49 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
             .build()
 
         return HandLandmarker.createFromOptions(context, options)
+    }
+
+    private fun ensureTcnInterpreter(): Interpreter {
+        tcnInterpreter?.let { return it }
+
+        val modelBuffer = loadAssetModel(TCN_MODEL_FILE)
+        tcnLabels = loadTcnLabels()
+
+        return Interpreter(
+            modelBuffer,
+            Interpreter.Options().setNumThreads(4)
+        ).also {
+            tcnInterpreter = it
+            Log.d("HandLandmarks", "TCN model initialized")
+        }
+    }
+
+    private fun loadAssetModel(assetName: String): MappedByteBuffer {
+        val fileDescriptor = reactApplicationContext.assets.openFd(assetName)
+        FileInputStream(fileDescriptor.fileDescriptor).use { inputStream ->
+            val channel = inputStream.channel
+            return channel.map(
+                FileChannel.MapMode.READ_ONLY,
+                fileDescriptor.startOffset,
+                fileDescriptor.declaredLength
+            )
+        }
+    }
+
+    private fun loadTcnLabels(): Map<Int, String> {
+        val labelsJson = reactApplicationContext.assets.open(TCN_LABELS_FILE)
+            .bufferedReader(Charsets.UTF_8)
+            .use { it.readText() }
+        val json = JSONObject(labelsJson)
+        val labels = mutableMapOf<Int, String>()
+        val keys = json.keys()
+
+        while (keys.hasNext()) {
+            val key = keys.next()
+            labels[key.toInt()] = json.getString(key)
+        }
+
+        return labels
     }
 
     private fun processResult(result: HandLandmarkerResult) {
@@ -188,6 +310,10 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
         try {
             HandLandmarkerHolder.handLandmarker?.close()
             HandLandmarkerHolder.handLandmarker = null
+            synchronized(tcnLock) {
+                tcnInterpreter?.close()
+                tcnInterpreter = null
+            }
             Log.d("HandLandmarks", "Cleanup successful")
         } catch (e: Exception) {
             Log.e("HandLandmarks", "Cleanup error: ${e.message}")
