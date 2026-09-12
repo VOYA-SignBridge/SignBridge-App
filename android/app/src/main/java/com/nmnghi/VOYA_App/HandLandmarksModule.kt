@@ -26,12 +26,13 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     companion object {
         private const val THROTTLE_INTERVAL_MS = 50L
         private const val NO_HAND_DEBOUNCE_MS = 150L
-        private const val TCN_MODEL_FILE = "tcn_20260624_232642.tflite"
-        private const val TCN_LABELS_FILE = "tcn_20260624_232642_display_labels.json"
-        private const val TCN_SEQUENCE_LENGTH = 60
-        private const val TCN_FEATURE_DIM = 126
-        private const val TCN_CLASS_COUNT = 42
-        private const val MIRROR_TCN_INPUT = true
+        private const val TCN_REGISTRY_FILE = "tflite_models.json"
+        private const val HAND_FEATURE_DIM = 126
+        private const val HANDS126_NORMALIZATION_VERSION = "hands126_v1"
+        private const val HAND_LANDMARK_COUNT = 21
+        private const val HAND_FEATURES_PER_LANDMARK = 3
+        private const val HAND_FEATURES_PER_HAND = 63
+        private const val NORMALIZATION_EPSILON = 1e-6f
         
         init {
             try {
@@ -49,7 +50,34 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     private val frameCount = AtomicLong(0L)
     private val tcnLock = Any()
     private var tcnInterpreter: Interpreter? = null
+    private var activeTcnModelId: String? = null
     private var tcnLabels: Map<Int, String> = emptyMap()
+    private val tcnRegistry: TcnRegistry by lazy { loadTcnRegistry() }
+
+    private data class TcnModelConfig(
+        val id: String,
+        val displayName: String,
+        val modelFile: String,
+        val labelsFile: String,
+        val sequenceLength: Int,
+        val featureDimension: Int,
+        val classCount: Int,
+        val signatureKey: String,
+        val frameInputName: String,
+        val lengthInputName: String?,
+        val outputName: String,
+        val applySoftmax: Boolean,
+        val mirrorInput: Boolean,
+        val swapHandedness: Boolean,
+        val normalizationVersion: String,
+        val numThreads: Int
+    )
+
+    private data class TcnRegistry(
+        val defaultModelId: String,
+        val modes: Map<String, String>,
+        val models: Map<String, TcnModelConfig>
+    )
 
     override fun getName() = "HandLandmarks"
 
@@ -61,41 +89,83 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
 
     @ReactMethod
     fun predictTcn(frames: ReadableArray, promise: Promise) {
+        predictTcnInternal(frames, null, promise)
+    }
+
+    @ReactMethod
+    fun predictTcnForModel(frames: ReadableArray, modelKey: String, promise: Promise) {
+        predictTcnInternal(frames, modelKey, promise)
+    }
+
+    @ReactMethod
+    fun getTcnModelConfig(modelKey: String, promise: Promise) {
         try {
-            if (frames.size() != TCN_SEQUENCE_LENGTH) {
+            promise.resolve(modelConfigToWritableMap(resolveTcnModel(modelKey)))
+        } catch (e: Exception) {
+            promise.reject("TCN_CONFIG_FAILED", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun getTcnModels(promise: Promise) {
+        try {
+            val result = Arguments.createMap()
+            result.putString("defaultModel", tcnRegistry.defaultModelId)
+
+            val modes = Arguments.createMap()
+            tcnRegistry.modes.forEach { (mode, modelId) -> modes.putString(mode, modelId) }
+            result.putMap("modes", modes)
+
+            val models = Arguments.createArray()
+            tcnRegistry.models.values.forEach { models.pushMap(modelConfigToWritableMap(it)) }
+            result.putArray("models", models)
+            promise.resolve(result)
+        } catch (e: Exception) {
+            promise.reject("TCN_CONFIG_FAILED", e.message, e)
+        }
+    }
+
+    private fun predictTcnInternal(frames: ReadableArray, modelKey: String?, promise: Promise) {
+        try {
+            val config = resolveTcnModel(modelKey)
+
+            if (frames.size() != config.sequenceLength) {
                 promise.reject(
                     "INVALID_TCN_INPUT",
-                    "Expected $TCN_SEQUENCE_LENGTH frames, received ${frames.size()}"
+                    "Model '${config.id}' expects ${config.sequenceLength} frames, received ${frames.size()}"
                 )
                 return
             }
 
-            val input = Array(1) { Array(TCN_SEQUENCE_LENGTH) { FloatArray(TCN_FEATURE_DIM) } }
+            val input = Array(1) {
+                Array(config.sequenceLength) { FloatArray(config.featureDimension) }
+            }
 
-            for (frameIndex in 0 until TCN_SEQUENCE_LENGTH) {
+            for (frameIndex in 0 until config.sequenceLength) {
                 val frame = frames.getArray(frameIndex)
                     ?: throw IllegalArgumentException("Frame $frameIndex is null")
 
-                if (frame.size() != TCN_FEATURE_DIM) {
+                if (frame.size() != config.featureDimension) {
                     throw IllegalArgumentException(
-                        "Frame $frameIndex must contain $TCN_FEATURE_DIM values, received ${frame.size()}"
+                        "Frame $frameIndex must contain ${config.featureDimension} values, received ${frame.size()}"
                     )
                 }
 
-                for (featureIndex in 0 until TCN_FEATURE_DIM) {
-                    input[0][frameIndex][featureIndex] = frame.getDouble(featureIndex).toFloat()
-                }
+                input[0][frameIndex] = prepareTcnFrame(frame, config)
             }
 
-            val output = Array(1) { FloatArray(TCN_CLASS_COUNT) }
+            val output = Array(1) { FloatArray(config.classCount) }
             val inputs = hashMapOf<String, Any>(
-                "inputs" to input,
-                "lengths" to intArrayOf(TCN_SEQUENCE_LENGTH)
+                config.frameInputName to input
             )
-            val outputs = hashMapOf<String, Any>("output_0" to output)
+            config.lengthInputName?.let {
+                inputs[it] = intArrayOf(config.sequenceLength)
+            }
+            val outputs = hashMapOf<String, Any>(config.outputName to output)
 
-            synchronized(tcnLock) {
-                ensureTcnInterpreter().runSignature(inputs, outputs, "serving_default")
+            val labelsForPrediction = synchronized(tcnLock) {
+                ensureTcnInterpreter(config).runSignature(inputs, outputs, config.signatureKey)
+                tcnLabels
             }
 
             val logits = output[0]
@@ -108,15 +178,21 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
                 }
             }
 
-            var sumExp = 0.0
-            for (logit in logits) {
-                sumExp += exp((logit - maxLogit).toDouble())
+            val confidence = if (config.applySoftmax) {
+                var sumExp = 0.0
+                for (logit in logits) {
+                    sumExp += exp((logit - maxLogit).toDouble())
+                }
+                1.0 / sumExp
+            } else {
+                maxLogit.toDouble()
             }
 
             val result = Arguments.createMap()
+            result.putString("modelId", config.id)
             result.putInt("classIndex", classIndex)
-            result.putString("label", tcnLabels[classIndex] ?: classIndex.toString())
-            result.putDouble("confidence", 1.0 / sumExp)
+            result.putString("label", labelsForPrediction[classIndex] ?: classIndex.toString())
+            result.putDouble("confidence", confidence)
             promise.resolve(result)
         } catch (e: Exception) {
             Log.e("HandLandmarks", "TCN prediction failed", e)
@@ -181,18 +257,33 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
         return HandLandmarker.createFromOptions(context, options)
     }
 
-    private fun ensureTcnInterpreter(): Interpreter {
-        tcnInterpreter?.let { return it }
+    private fun ensureTcnInterpreter(config: TcnModelConfig): Interpreter {
+        if (activeTcnModelId == config.id) {
+            tcnInterpreter?.let { return it }
+        }
 
-        val modelBuffer = loadAssetModel(TCN_MODEL_FILE)
-        tcnLabels = loadTcnLabels()
+        tcnInterpreter?.close()
+        tcnInterpreter = null
+        activeTcnModelId = null
+
+        val modelBuffer = loadAssetModel(config.modelFile)
+        val loadedLabels = loadTcnLabels(config.labelsFile)
+        require(loadedLabels.size == config.classCount) {
+            "${config.id}: labels contain ${loadedLabels.size} entries, expected ${config.classCount}"
+        }
+        val missingLabelIndices = (0 until config.classCount).filterNot(loadedLabels::containsKey)
+        require(missingLabelIndices.isEmpty()) {
+            "${config.id}: labels are missing indices ${missingLabelIndices.joinToString()}"
+        }
+        tcnLabels = loadedLabels
 
         return Interpreter(
             modelBuffer,
-            Interpreter.Options().setNumThreads(4)
+            Interpreter.Options().setNumThreads(config.numThreads)
         ).also {
             tcnInterpreter = it
-            Log.d("HandLandmarks", "TCN model initialized")
+            activeTcnModelId = config.id
+            Log.d("HandLandmarks", "TCN model '${config.id}' initialized")
         }
     }
 
@@ -208,8 +299,8 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
         }
     }
 
-    private fun loadTcnLabels(): Map<Int, String> {
-        val labelsJson = reactApplicationContext.assets.open(TCN_LABELS_FILE)
+    private fun loadTcnLabels(labelsFile: String): Map<Int, String> {
+        val labelsJson = reactApplicationContext.assets.open(labelsFile)
             .bufferedReader(Charsets.UTF_8)
             .use { it.readText() }
         val json = JSONObject(labelsJson)
@@ -222,6 +313,203 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
         }
 
         return labels
+    }
+
+    private fun loadTcnRegistry(): TcnRegistry {
+        val registryJson = reactApplicationContext.assets.open(TCN_REGISTRY_FILE)
+            .bufferedReader(Charsets.UTF_8)
+            .use { it.readText() }
+        val root = JSONObject(registryJson)
+        val modelsJson = root.getJSONObject("models")
+        val models = mutableMapOf<String, TcnModelConfig>()
+        val modelIds = modelsJson.keys()
+
+        while (modelIds.hasNext()) {
+            val id = modelIds.next()
+            val json = modelsJson.getJSONObject(id)
+            models[id] = TcnModelConfig(
+                id = id,
+                displayName = json.optString("displayName", id),
+                modelFile = json.getString("modelFile"),
+                labelsFile = json.getString("labelsFile"),
+                sequenceLength = json.getInt("sequenceLength"),
+                featureDimension = json.getInt("featureDimension"),
+                classCount = json.getInt("classCount"),
+                signatureKey = json.optString("signatureKey", "serving_default"),
+                frameInputName = json.optString("frameInputName", "inputs"),
+                lengthInputName = json.optString("lengthInputName", "lengths")
+                    .takeIf { it.isNotBlank() },
+                outputName = json.optString("outputName", "output_0"),
+                applySoftmax = json.optBoolean("applySoftmax", true),
+                mirrorInput = json.optBoolean("mirrorInput", false),
+                swapHandedness = json.optBoolean("swapHandedness", false),
+                normalizationVersion = json.optString(
+                    "normalizationVersion",
+                    HANDS126_NORMALIZATION_VERSION
+                ),
+                numThreads = json.optInt("numThreads", 4).coerceAtLeast(1)
+            ).also { validateTcnModelConfig(it) }
+        }
+
+        val modes = mutableMapOf<String, String>()
+        root.optJSONObject("modes")?.let { modesJson ->
+            val modeNames = modesJson.keys()
+            while (modeNames.hasNext()) {
+                val mode = modeNames.next()
+                modes[mode] = modesJson.getString(mode)
+            }
+        }
+
+        val defaultModelId = root.getString("defaultModel")
+        require(models.containsKey(defaultModelId)) {
+            "Default TFLite model '$defaultModelId' is not declared in $TCN_REGISTRY_FILE"
+        }
+        modes.forEach { (mode, modelId) ->
+            require(models.containsKey(modelId)) {
+                "Mode '$mode' references unknown TFLite model '$modelId'"
+            }
+        }
+
+        return TcnRegistry(defaultModelId, modes, models)
+    }
+
+    private fun validateTcnModelConfig(config: TcnModelConfig) {
+        require(config.sequenceLength > 0) { "${config.id}: sequenceLength must be positive" }
+        require(config.featureDimension == HAND_FEATURE_DIM) {
+            "${config.id}: this landmark pipeline requires featureDimension=$HAND_FEATURE_DIM"
+        }
+        require(config.classCount > 0) { "${config.id}: classCount must be positive" }
+        require(config.normalizationVersion == HANDS126_NORMALIZATION_VERSION) {
+            "${config.id}: unsupported normalizationVersion '${config.normalizationVersion}'"
+        }
+    }
+
+    private fun resolveTcnModel(modelKey: String?): TcnModelConfig {
+        val key = modelKey?.takeIf { it.isNotBlank() } ?: tcnRegistry.defaultModelId
+        val modelId = tcnRegistry.modes[key] ?: key
+        return tcnRegistry.models[modelId]
+            ?: throw IllegalArgumentException(
+                "Unknown TFLite model or mode '$key'. Available models: ${tcnRegistry.models.keys.joinToString()}"
+            )
+    }
+
+    private fun modelConfigToWritableMap(config: TcnModelConfig): WritableMap {
+        return Arguments.createMap().apply {
+            putString("id", config.id)
+            putString("displayName", config.displayName)
+            putInt("sequenceLength", config.sequenceLength)
+            putInt("featureDimension", config.featureDimension)
+            putInt("classCount", config.classCount)
+            putBoolean("mirrorInput", config.mirrorInput)
+            putBoolean("swapHandedness", config.swapHandedness)
+            putString("normalizationVersion", config.normalizationVersion)
+        }
+    }
+
+    private fun prepareTcnFrame(frame: ReadableArray, config: TcnModelConfig): FloatArray {
+        val raw = FloatArray(config.featureDimension) { index ->
+            frame.getDouble(index).toFloat()
+        }
+
+        val handOrderAdjusted = if (config.swapHandedness) swapHandBlocks126(raw) else raw
+        val oriented = if (config.mirrorInput) mirrorHands126(handOrderAdjusted) else handOrderAdjusted
+        return normalizeHands126V1(oriented)
+    }
+
+    private fun swapHandBlocks126(raw: FloatArray): FloatArray {
+        require(raw.size == HAND_FEATURE_DIM) {
+            "Hand block swap expects $HAND_FEATURE_DIM features, received ${raw.size}"
+        }
+
+        return FloatArray(HAND_FEATURE_DIM).apply {
+            System.arraycopy(raw, HAND_FEATURES_PER_HAND, this, 0, HAND_FEATURES_PER_HAND)
+            System.arraycopy(raw, 0, this, HAND_FEATURES_PER_HAND, HAND_FEATURES_PER_HAND)
+        }
+    }
+
+    private fun mirrorHands126(raw: FloatArray): FloatArray {
+        val mirrored = FloatArray(HAND_FEATURE_DIM)
+        for (targetHand in 0 until 2) {
+            val sourceHand = 1 - targetHand
+            val sourceOffset = sourceHand * HAND_FEATURES_PER_HAND
+            val targetOffset = targetHand * HAND_FEATURES_PER_HAND
+
+            for (landmark in 0 until HAND_LANDMARK_COUNT) {
+                val source = sourceOffset + landmark * HAND_FEATURES_PER_LANDMARK
+                val target = targetOffset + landmark * HAND_FEATURES_PER_LANDMARK
+                val landmarkPresent = raw[source] != 0f || raw[source + 1] != 0f || raw[source + 2] != 0f
+                if (!landmarkPresent) continue
+
+                mirrored[target] = 1f - raw[source]
+                mirrored[target + 1] = raw[source + 1]
+                mirrored[target + 2] = raw[source + 2]
+            }
+        }
+        return mirrored
+    }
+
+    /**
+     * Matches the hands126_v1 preprocessing used by the training/collector pipeline:
+     * each hand is wrist-centred and independently scaled in XY, while Z is unchanged.
+     * Missing hands and missing landmark triples remain all-zero padding.
+     */
+    private fun normalizeHands126V1(raw: FloatArray): FloatArray {
+        require(raw.size == HAND_FEATURE_DIM) {
+            "hands126_v1 expects $HAND_FEATURE_DIM features, received ${raw.size}"
+        }
+
+        val normalized = FloatArray(HAND_FEATURE_DIM)
+        for (hand in 0 until 2) {
+            val offset = hand * HAND_FEATURES_PER_HAND
+            val present = BooleanArray(HAND_LANDMARK_COUNT)
+            for (landmark in 0 until HAND_LANDMARK_COUNT) {
+                val source = offset + landmark * HAND_FEATURES_PER_LANDMARK
+                present[landmark] = raw[source] != 0f || raw[source + 1] != 0f || raw[source + 2] != 0f
+            }
+            if (present.none { it }) continue
+
+            val wristX = raw[offset]
+            val wristY = raw[offset + 1]
+            val centeredX = FloatArray(HAND_LANDMARK_COUNT)
+            val centeredY = FloatArray(HAND_LANDMARK_COUNT)
+            var minX = Float.POSITIVE_INFINITY
+            var maxX = Float.NEGATIVE_INFINITY
+            var minY = Float.POSITIVE_INFINITY
+            var maxY = Float.NEGATIVE_INFINITY
+            var hasScalePoint = false
+
+            for (landmark in 0 until HAND_LANDMARK_COUNT) {
+                if (!present[landmark]) continue
+                val source = offset + landmark * HAND_FEATURES_PER_LANDMARK
+                val x = raw[source] - wristX
+                val y = raw[source + 1] - wristY
+                centeredX[landmark] = x
+                centeredY[landmark] = y
+
+                if (landmark > 0 && x * x + y * y > NORMALIZATION_EPSILON * NORMALIZATION_EPSILON) {
+                    minX = minOf(minX, x)
+                    maxX = maxOf(maxX, x)
+                    minY = minOf(minY, y)
+                    maxY = maxOf(maxY, y)
+                    hasScalePoint = true
+                }
+            }
+
+            val scale = if (hasScalePoint) {
+                maxOf(maxX - minX, maxY - minY).takeIf { it > NORMALIZATION_EPSILON } ?: 1f
+            } else {
+                1f
+            }
+
+            for (landmark in 0 until HAND_LANDMARK_COUNT) {
+                if (!present[landmark]) continue
+                val target = offset + landmark * HAND_FEATURES_PER_LANDMARK
+                normalized[target] = centeredX[landmark] / scale
+                normalized[target + 1] = centeredY[landmark] / scale
+                normalized[target + 2] = raw[target + 2]
+            }
+        }
+        return normalized
     }
 
     private fun processResult(result: HandLandmarkerResult) {
@@ -304,6 +592,7 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
             synchronized(tcnLock) {
                 tcnInterpreter?.close()
                 tcnInterpreter = null
+                activeTcnModelId = null
             }
             Log.d("HandLandmarks", "Cleanup successful")
         } catch (e: Exception) {
@@ -320,16 +609,7 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     handednessList.forEachIndexed { idx, categories ->
         if (categories.isEmpty()) return@forEachIndexed
 
-        val detectedHandedness = categories[0].categoryName().lowercase()
-        val handedness = if (MIRROR_TCN_INPUT) {
-            when (detectedHandedness) {
-                "left" -> "right"
-                "right" -> "left"
-                else -> detectedHandedness
-            }
-        } else {
-            detectedHandedness
-        }
+        val handedness = categories[0].categoryName().lowercase()
         val target = when (handedness) {
             "left" -> left
             "right" -> right
@@ -339,7 +619,7 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
         val landmarks = result.landmarks()[idx]
         for (i in 0 until 21) {
             val lm = landmarks[i]
-            target[i * 3] = if (MIRROR_TCN_INPUT) 1f - lm.x() else lm.x()
+            target[i * 3] = lm.x()
             target[i * 3 + 1] = lm.y()
             target[i * 3 + 2] = lm.z()
         }

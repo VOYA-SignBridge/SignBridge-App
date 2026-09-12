@@ -1,12 +1,12 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
+  ActivityIndicator,
   StyleSheet,
   Text,
   View,
   FlatList,
   TextInput,
   TouchableOpacity,
-  Platform,
   Keyboard,
   ScrollView,
   InteractionManager,
@@ -17,6 +17,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { MOET_DATA } from '../data/dictionaryData'; 
+import { resolveQipedcVideoUrl } from '../utils/QipedcVideoResolver';
 
 type DictionaryItem = {
   id: string;
@@ -29,7 +30,7 @@ type SortOrder = 'AZ' | 'ZA';
 
 export default function AvatarScreen() {
   const { colors: theme } = useTheme();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWord, setSelectedWord] = useState<DictionaryItem | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -212,17 +213,58 @@ export default function AvatarScreen() {
 
 function DictVideoSection({ url }: { url: string }) {
   const { colors } = useTheme();
-  const source = {
-    uri: url,
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Referer': 'https://qipedc.moet.gov.vn/',
-    },
-  };
-  const player = useVideoPlayer(source, (p) => {
+  const [playableUrl, setPlayableUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+    setPlayableUrl(null);
+    setError(null);
+
+    resolveQipedcVideoUrl(url)
+      .then((resolvedUrl) => {
+        if (isActive) setPlayableUrl(resolvedUrl);
+      })
+      .catch((reason) => {
+        if (isActive) {
+          setError(reason instanceof Error ? reason.message : 'Không thể tải video.');
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [url]);
+
+  const player = useVideoPlayer(playableUrl, (p) => {
     p.loop = true;
-    p.play();
   });
+
+  useEffect(() => {
+    if (playableUrl) {
+      player.loop = true;
+      player.play();
+    }
+  }, [playableUrl, player]);
+
+  if (error) {
+    return (
+      <View style={[styles.videoStatus, { backgroundColor: colors.controlBG }]}>
+        <Ionicons name="alert-circle-outline" size={30} color={colors.icon} />
+        <Text style={[styles.videoStatusText, { color: colors.text }]}>{error}</Text>
+      </View>
+    );
+  }
+
+  if (!playableUrl) {
+    return (
+      <View style={[styles.videoStatus, { backgroundColor: colors.controlBG }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.videoStatusText, { color: colors.text }]}>Đang tải video...</Text>
+      </View>
+    );
+  }
+
   return (
     <VideoView style={[styles.video, { backgroundColor: colors.controlBG }]} player={player} contentFit="contain" nativeControls />
   );
@@ -309,6 +351,19 @@ const styles = StyleSheet.create({
   video: { 
     width: '100%', 
     height: '100%' 
+  },
+  videoStatus: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  videoStatusText: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
   },
   videoLabel: {
     position: 'absolute', 

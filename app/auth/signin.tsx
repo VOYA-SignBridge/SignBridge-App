@@ -39,20 +39,20 @@ export default function SignInScreen() {
 
     setIsLoading(true);
     try {
-      // const timeout = new Promise<never>((_, reject) =>
-      //   setTimeout(() => reject(new Error('Không thể kết nối tới máy chủ. Kiểm tra lại mạng và thử lại.')), 15_000)
-      // );
-      // const { data, error } = await Promise.race([
-      //   supabase.auth.signInWithPassword({ email, password }),
-      //   timeout,
-      // ]) as Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Không thể kết nối tới máy chủ. Kiểm tra lại mạng và thử lại.')), 15_000)
+      );
+      const { data, error } = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        timeout,
+      ]) as Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
 
-      // if (error || !data.session) {
-      //   Alert.alert(t('auth.loginFailed'), error?.message || t('auth.loginFailedMsg'));
-      //   return;
-      // }
+      if (error || !data.session) {
+        Alert.alert(t('auth.loginFailed'), error?.message || t('auth.loginFailedMsg'));
+        return;
+      }
 
-      // await AsyncStorage.setItem('access_token', data.session.access_token);
+      await AsyncStorage.setItem('access_token', data.session.access_token);
       router.replace("/(tabs)/translation");
 
       privateApi

@@ -1,6 +1,7 @@
-const env = process.env;
+export const API_URL =
+  process.env.EXPO_PUBLIC_API_URL ??
+  'https://se.cit.ctu.edu.vn/signbridge/api/v1';
 
-
-
-export const API_URL = env.EXPO_PUBLIC_API_URL 
-export const WS_BASE = env.EXPO_PUBLIC_WS_BASE 
+export const WS_BASE =
+  process.env.EXPO_PUBLIC_WS_BASE ??
+  'wss://se.cit.ctu.edu.vn/signbridge';

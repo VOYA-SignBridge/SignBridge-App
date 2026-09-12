@@ -51,9 +51,14 @@ android {
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
 
-        // Cấu hình ép máy ảo chạy thư viện ARM (Fix lỗi UnsatisfiedLinkError)
+        // Respect -PreactNativeArchitectures when building for a specific device.
         ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a'
+            def requestedArchitectures = findProperty('reactNativeArchitectures')
+            if (requestedArchitectures) {
+                abiFilters(*requestedArchitectures.split(',').collect { it.trim() })
+            } else {
+                abiFilters 'armeabi-v7a', 'arm64-v8a'
+            }
         }
     }
 

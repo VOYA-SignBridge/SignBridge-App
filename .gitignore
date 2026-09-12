@@ -8,6 +8,7 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+.idea/
 
 # Native
 .kotlin/
@@ -40,4 +41,5 @@ app-example
 
 # Environment variable
 .env
+env
     

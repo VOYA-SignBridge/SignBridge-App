@@ -52,3 +52,27 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Switching TFLite models (Android)
+
+TFLite models are registered in
+`android/app/src/main/assets/tflite_models.json`. The native module no longer
+hard-codes a model filename or its tensor dimensions.
+
+To add or replace a model:
+
+1. Copy the `.tflite` model and its display-label JSON file into
+   `android/app/src/main/assets/`.
+2. Add a model entry under `models` in `tflite_models.json`. Set its sequence
+   length, feature dimension, class count, signature/input/output names, and
+   preprocessing flags to match the exported model.
+3. Point `modes.alphabet` and/or `modes.word` to the new model ID. Set
+   `defaultModel` for callers that still use `predictTcn(frames)`.
+4. Rebuild the Android app so the new assets are packaged into the APK.
+
+`applySoftmax` should be `true` when the model returns logits and `false` when
+it already returns probabilities. `mirrorInput` swaps left/right hands and
+mirrors the X coordinate at prediction time; raw MediaPipe landmarks remain
+the shared event format. The current MediaPipe pipeline emits 126 features
+(21 XYZ landmarks for each of two hands), so registered models must use
+`featureDimension: 126`.

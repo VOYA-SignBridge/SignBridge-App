@@ -36,6 +36,8 @@ type Participant = {
   joined_at: string;
 };
 
+type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
+
 export default function RoomScreen() {
   const { code, participant_id, role, display_name, wsUrl } = useLocalSearchParams();
 
@@ -60,6 +62,7 @@ export default function RoomScreen() {
   });
   const [messages, setMessages] = useState<any[]>([]);
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [text, setText] = useState("");
   const [roomInfo, setRoomInfo] = useState<any>(null);
   const [userInfo, setUserInfo] = useState<any | null>(null);
@@ -147,30 +150,47 @@ export default function RoomScreen() {
 
     const connect = async () => {
       const token = await AsyncStorage.getItem("access_token");
-      console.log("Connecting WS with token:", !!token, "wsUrl:", wsUrl);
-      if (!token) return;
+      const baseWsUrl = String(wsUrl);
+      console.log("Connecting WS", {
+        hasToken: Boolean(token),
+        roomCode: String(code),
+        endpoint: baseWsUrl.split("?", 1)[0],
+      });
+      if (!token) {
+        setConnectionStatus("disconnected");
+        return;
+      }
       if (socket && socket.readyState === WebSocket.OPEN) return;
 
- socket = new WebSocket(
-  wsUrl as string,
-  [`jwt,${token}`]
-);
-socket.onclose = (e) => {
-  console.log("WS CLOSE", e.code, e.reason);
-  if (e.code === 1006 && wsRetryCountRef.current < maxRetries) {
-    wsRetryCountRef.current += 1;
-    wsRetryTimerRef.current = setTimeout(() => {
-      connect();
-    }, 500);
-  }
-};
+      const separator = baseWsUrl.includes("?") ? "&" : "?";
+      const authenticatedWsUrl = `${baseWsUrl}${separator}token=${encodeURIComponent(token)}`;
 
-socket.onerror = (e) => {
-  console.log("WS ERROR", e);
-};
+      // Production deployments have used both query-token and subprotocol-token
+      // authentication. Supplying both keeps the client compatible with either
+      // server contract; the token is never included in application logs.
+      socket = new WebSocket(authenticatedWsUrl, ["jwt", token]);
+      socket.onclose = (e) => {
+        console.log("WS CLOSE", e.code, e.reason);
+        setWs(null);
+        if (e.code === 1006 && wsRetryCountRef.current < maxRetries) {
+          wsRetryCountRef.current += 1;
+          setConnectionStatus("reconnecting");
+          wsRetryTimerRef.current = setTimeout(() => {
+            connect();
+          }, 500 * wsRetryCountRef.current);
+        } else {
+          setConnectionStatus("disconnected");
+        }
+      };
+
+      socket.onerror = () => {
+        console.warn("WS connection error", { roomCode: String(code) });
+      };
       setWs(socket);
 
       socket.onopen = () => {
+        wsRetryCountRef.current = 0;
+        setConnectionStatus("connected");
         if (!participant_id) return;
         setParticipants((prev) => ({
           ...prev,
@@ -226,33 +246,28 @@ socket.onerror = (e) => {
       }
       if (socket) socket.close();
     };
-  }, [wsUrl, participant_id, display_name, role]);
+  }, [wsUrl, code, participant_id, display_name, role]);
 
   const sendMessage = () => {
- if (!ws) {
-    console.warn("[WS] no socket");
-    return;
-  }
-
-  console.log("[WS] readyState =", ws.readyState);
-
-  if (ws.readyState !== WebSocket.OPEN) {
-    console.warn("[WS] socket not open");
-    return;
-  }
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      console.warn("[WS] socket not open");
+      setConnectionStatus("disconnected");
+      return;
+    }
     const trimmed = text.trim();
     if (!trimmed) return;
 
     const msg = {
       type: "chat.message",
       text: trimmed,
-      no_echo: true,
     };
-  console.log("[WS] SEND", msg);
-
-    ws.send(JSON.stringify(msg));
-    
-    setText("");
+    try {
+      ws.send(JSON.stringify(msg));
+      setText("");
+    } catch (error) {
+      console.warn("[WS] send failed", error);
+      setConnectionStatus("disconnected");
+    }
   };
 
   const handleLeaveRoom = async () => {
@@ -441,6 +456,12 @@ socket.onerror = (e) => {
           }}
         />
 
+        {connectionStatus !== "connected" && (
+          <Text style={[styles.connectionStatus, { color: theme.error }]}>
+            {t(`conversation.connection.${connectionStatus}`)}
+          </Text>
+        )}
+
         <View style={[
           styles.inputContainer,
           {
@@ -474,18 +495,18 @@ socket.onerror = (e) => {
             style={[
               styles.sendButton,
               {
-                backgroundColor: text.trim() ? theme.primary : theme.textInputBG,
-                shadowColor: text.trim() ? theme.primary : 'transparent',
-                elevation: text.trim() ? 5 : 0
+                backgroundColor: text.trim() && connectionStatus === "connected" ? theme.primary : theme.textInputBG,
+                shadowColor: text.trim() && connectionStatus === "connected" ? theme.primary : 'transparent',
+                elevation: text.trim() && connectionStatus === "connected" ? 5 : 0
               }
             ]} 
             onPress={sendMessage}
-            disabled={!text.trim()}
+            disabled={!text.trim() || connectionStatus !== "connected"}
           >
             <Ionicons 
               name="send" 
               size={20} 
-              color={text.trim() ? "white" : theme.icon} 
+              color={text.trim() && connectionStatus === "connected" ? "white" : theme.icon}
               style={{ marginLeft: text.trim() ? 2 : 0 }}
             />
           </TouchableOpacity>
@@ -707,6 +728,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderTopWidth: 1,
+  },
+  connectionStatus: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    fontSize: 12,
+    textAlign: 'center',
   },
   iconBtnOutside: {
     padding: 6,

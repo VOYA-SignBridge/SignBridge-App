@@ -7,7 +7,10 @@ import com.facebook.react.uimanager.ViewManager
 
 class HandLandmarksPackage : ReactPackage {
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        return listOf(HandLandmarksModule(reactContext))
+        return listOf(
+            HandLandmarksModule(reactContext),
+            QipedcVideoModule(reactContext),
+        )
     }
 
     override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {

@@ -1,11 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import {
+  getTfliteModelConfig,
+  predictWithTfliteModel,
+  TFLITE_MODES,
+  type TfliteModelConfig,
+} from '@/config/tfliteModels';
 
-const THROTTLE_MS = 500;
-const SEQ_LEN = 60;
-const FEATURE_DIM = 126;
-const MIN_CONFIDENCE = 0.2;
+const THROTTLE_MS = 120;
+const MIN_CONFIDENCE = 0.65;
+const SOURCE_WINDOW_SIZE = 20;
+const REQUIRED_STABLE_PREDICTIONS = 2;
+
+const ALPHABET_LABELS = new Set([
+  'A', 'Ă', 'Â', 'B', 'C', 'D', 'Đ', 'E', 'Ê', 'G',
+  'H', 'I', 'K', 'L', 'M', 'N', 'O', 'Ô', 'Ơ', 'P',
+  'Q', 'R', 'S', 'T', 'U', 'Ư', 'V', 'X', 'Y', 'Z',
+]);
+
+function resampleFrames(frames: number[][], targetLength: number): number[][] {
+  if (frames.length === 0 || targetLength <= 0) return [];
+
+  return Array.from({ length: targetLength }, (_, index) => {
+    const sourceIndex = Math.min(
+      frames.length - 1,
+      Math.floor((index * frames.length) / targetLength),
+    );
+    return frames[sourceIndex];
+  });
+}
 
 const { HandLandmarks } = NativeModules;
 const eventEmitter = new NativeEventEmitter(HandLandmarks);
@@ -26,13 +50,39 @@ export default function AlphabetMode({ onResult, theme }: Props) {
   const isPredicting = useRef(false);
   const lastEventTime = useRef(0);
   const lastPredictionTime = useRef(0);
+  const modelConfig = useRef<TfliteModelConfig | null>(null);
+  const candidateLabel = useRef('');
+  const candidateCount = useRef(0);
+  const lastCommittedLabel = useRef('');
+  const sequenceGeneration = useRef(0);
+
+
+  useEffect(() => {
+    let mounted = true;
+    getTfliteModelConfig(TFLITE_MODES.alphabet)
+      .then((config) => {
+        if (mounted) modelConfig.current = config;
+      })
+      .catch(() => {
+        if (mounted) setStatusMsg(t('camera.networkError'));
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [t]);
 
   useEffect(() => {
     const sub = eventEmitter.addListener('onHandLandmarksDetected', (event) => {
       if (!event.landmarks || event.landmarks.length === 0) {
         setHasHand(false);
         setDetectedChar('');
+        setStatusMsg('');
         frameBuffer.current = [];
+        candidateLabel.current = '';
+        candidateCount.current = 0;
+        lastCommittedLabel.current = '';
+        sequenceGeneration.current += 1;
         return;
       }
 
@@ -48,37 +98,64 @@ export default function AlphabetMode({ onResult, theme }: Props) {
       if (now - lastEventTime.current < 50) return;
       lastEventTime.current = now;
 
+      const config = modelConfig.current;
+      if (!config) return;
+
       const frameVector = Array.from(event.frame ?? []) as number[];
-      if (frameVector.length !== FEATURE_DIM) return;
+      if (frameVector.length !== config.featureDimension) return;
 
       frameBuffer.current.push(frameVector);
-      if (frameBuffer.current.length > SEQ_LEN) frameBuffer.current.shift();
+      if (frameBuffer.current.length > SOURCE_WINDOW_SIZE) frameBuffer.current.shift();
 
       if (
-        frameBuffer.current.length === SEQ_LEN &&
+        frameBuffer.current.length === SOURCE_WINDOW_SIZE &&
         !isPredicting.current &&
-        now - lastPredictionTime.current > THROTTLE_MS
+        now - lastPredictionTime.current >= THROTTLE_MS
       ) {
-        predictLocal(frameBuffer.current.slice());
+        const frames = resampleFrames(frameBuffer.current, config.sequenceLength);
+        predictLocal(frames, sequenceGeneration.current);
       }
     });
 
     return () => sub.remove();
   }, []);
 
-  const predictLocal = async (frames: number[][]) => {
+  const predictLocal = async (frames: number[][], generation: number) => {
     if (isPredicting.current) return;
     isPredicting.current = true;
     setIsProcessing(true);
 
     try {
-      const data = await HandLandmarks.predictTcn(frames);
-      const label = String(data?.label ?? '');
+      const data = await predictWithTfliteModel(frames, TFLITE_MODES.alphabet);
+      const label = String(data?.label ?? '')
+        .trim()
+        .toLocaleUpperCase('vi-VN');
+      const confidence = Number(data?.confidence ?? 0);
 
-      if (/^[A-Z]$/.test(label) && data.confidence >= MIN_CONFIDENCE) {
-        onResult(label);
-        setDetectedChar(label);
-        setStatusMsg(`${(data.confidence * 100).toFixed(0)}%`);
+      // Ignore a prediction that completed after the hand disappeared and the
+      // active sequence was reset.
+      if (generation !== sequenceGeneration.current) return;
+
+      if (ALPHABET_LABELS.has(label) && confidence >= MIN_CONFIDENCE) {
+        if (candidateLabel.current === label) {
+          candidateCount.current += 1;
+        } else {
+          candidateLabel.current = label;
+          candidateCount.current = 1;
+        }
+
+        if (candidateCount.current >= REQUIRED_STABLE_PREDICTIONS) {
+          setDetectedChar(label);
+          setStatusMsg(`${(confidence * 100).toFixed(0)}%`);
+
+          if (lastCommittedLabel.current !== label) {
+            lastCommittedLabel.current = label;
+            onResult(label);
+          }
+        }
+      } else {
+        candidateLabel.current = '';
+        candidateCount.current = 0;
       }
     } catch (e) {
       setStatusMsg(t('camera.networkError'));

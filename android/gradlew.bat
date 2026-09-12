@@ -17,6 +17,12 @@
 @rem
 
 @if "%DEBUG%"=="" @echo off
+
+@rem Keep React Native/Expo native builds from exhausting memory by letting each
+@rem CMake/Ninja invocation compile at most two translation units concurrently.
+@rem Callers can still override this value when more parallelism is appropriate.
+@if not defined CMAKE_BUILD_PARALLEL_LEVEL set CMAKE_BUILD_PARALLEL_LEVEL=2
+
 @rem ##########################################################################
 @rem
 @rem  Gradle startup script for Windows

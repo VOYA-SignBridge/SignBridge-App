@@ -18,7 +18,6 @@ import { WS_BASE } from "@/config";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTranslation } from "react-i18next";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type CreateRoomResponse = { code: string };
 type Participant = { id: string; role: string; display_name: string };
@@ -43,13 +42,11 @@ export default function ConversationScreen() {
         `/rooms/${code}/join?role=normal`
       );
       const participant = res.data.participant;
-      const token = await AsyncStorage.getItem("access_token");
       const wsUrl =
         `${WS_BASE}/ws/rooms/${code}` +
         `?participant_id=${participant.id}` +
         `&role=${participant.role}` +
-        `&display_name=${encodeURIComponent(participant.display_name)}` +
-        `&token=${token}`;
+        `&display_name=${encodeURIComponent(participant.display_name)}`;
 
       router.push({
         pathname: "/conversation/room/[code]",
@@ -97,13 +94,11 @@ export default function ConversationScreen() {
         `/rooms/${code}/join?role=normal`
       );
       const participant = res.data.participant;
-      const token = await AsyncStorage.getItem("access_token");
       const wsUrl =
         `${WS_BASE}/ws/rooms/${code}` +
         `?participant_id=${participant.id}` +
         `&role=${participant.role}` +
-        `&display_name=${encodeURIComponent(participant.display_name)}` +
-        `&token=${token}`;
+        `&display_name=${encodeURIComponent(participant.display_name)}`;
 
       setShowScanner(false);
       router.push({

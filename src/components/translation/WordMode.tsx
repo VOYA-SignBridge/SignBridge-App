@@ -2,9 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import {
+  getTfliteModelConfig,
+  predictWithTfliteModel,
+  TFLITE_MODES,
+  type TfliteModelConfig,
+} from '@/config/tfliteModels';
 
-const SEQ_LEN = 60;
-const FEATURE_DIM = 126;
 const { HandLandmarks } = NativeModules;
 const eventEmitter = new NativeEventEmitter(HandLandmarks);
 
@@ -25,11 +29,30 @@ export default function WordMode({ onResult, theme }: Props) {
   const isPredicting = useRef(false);
   const lastEventTime = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const modelConfigRef = useRef<TfliteModelConfig | null>(null);
+  const [modelConfig, setModelConfig] = useState<TfliteModelConfig | null>(null);
   // Sync ref: listener checks this directly — no stale closure, no listener gap when isRecording toggles
   const isRecordingRef = useRef(false);
 
+  useEffect(() => {
+    let mounted = true;
+    getTfliteModelConfig(TFLITE_MODES.word)
+      .then((config) => {
+        if (!mounted) return;
+        modelConfigRef.current = config;
+        setModelConfig(config);
+      })
+      .catch(() => {
+        if (mounted) setStatusMsg(t('camera.networkError'));
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [t]);
+
   const handlePressRecord = () => {
-    if (isRecordingRef.current || isProcessing || countdown > 0) return;
+    if (!modelConfigRef.current || isRecordingRef.current || isProcessing || countdown > 0) return;
     setCountdown(3);
     setStatusMsg('');
   };
@@ -56,7 +79,10 @@ export default function WordMode({ onResult, theme }: Props) {
     keypointsBuffer.current = [];
     isRecordingRef.current = true;
     setIsRecording(true);
-    setStatusMsg(t('camera.recording', { current: 0, total: SEQ_LEN }));
+    setStatusMsg(t('camera.recording', {
+      current: 0,
+      total: modelConfigRef.current?.sequenceLength ?? 0,
+    }));
   };
 
   // Empty deps: single subscription for component lifetime, no listener gap on recording toggle
@@ -77,17 +103,23 @@ export default function WordMode({ onResult, theme }: Props) {
       if (!isRecordingRef.current) return;
 
       try {
+        const config = modelConfigRef.current;
+        if (!config) return;
+
         const frameVector = Array.from(event.frame ?? []) as number[];
-        if (frameVector.length !== FEATURE_DIM) return;
+        if (frameVector.length !== config.featureDimension) return;
 
         const currentBuffer = keypointsBuffer.current;
         currentBuffer.push(frameVector);
-        setStatusMsg(t('camera.recording', { current: currentBuffer.length, total: SEQ_LEN }));
+        setStatusMsg(t('camera.recording', {
+          current: currentBuffer.length,
+          total: config.sequenceLength,
+        }));
 
-        if (currentBuffer.length >= SEQ_LEN) {
+        if (currentBuffer.length >= config.sequenceLength) {
           isRecordingRef.current = false;
           setIsRecording(false);
-          const framesToSend = currentBuffer.slice(0, SEQ_LEN);
+          const framesToSend = currentBuffer.slice(0, config.sequenceLength);
           predictLocal(framesToSend);
           keypointsBuffer.current = [];
         }
@@ -104,7 +136,7 @@ export default function WordMode({ onResult, theme }: Props) {
     setStatusMsg(t('camera.translating'));
 
     try {
-      const data = await HandLandmarks.predictTcn(frames);
+      const data = await predictWithTfliteModel(frames, TFLITE_MODES.word);
       if (data?.label) {
         onResult(data.label);
         setStatusMsg(t('camera.done'));
@@ -143,7 +175,7 @@ export default function WordMode({ onResult, theme }: Props) {
           (isRecording || countdown > 0) && styles.recordingBtn,
         ]}
         onPress={handlePressRecord}
-        disabled={isProcessing}
+        disabled={isProcessing || !modelConfig}
       >
         {isProcessing ? (
           <ActivityIndicator color="white" size="large" />
