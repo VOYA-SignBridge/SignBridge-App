@@ -92,7 +92,10 @@
     "translating": "Translating...",
     "done": "Done!",
     "unclear": "Unclear",
-    "networkError": "Network error"
+    "networkError": "Network error",
+    "modelError": "Model error: {{message}}",
+    "lowConfidence": "{{label}}: {{confidence}}% (requires {{minimum}}%)",
+    "invalidLabel": "Invalid label: {{label}}"
   },
   "conversation": {
     "title": "Chat",

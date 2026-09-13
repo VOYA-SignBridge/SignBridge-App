@@ -281,10 +281,62 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
             modelBuffer,
             Interpreter.Options().setNumThreads(config.numThreads)
         ).also {
+            validateInterpreterSignature(it, config)
             tcnInterpreter = it
             activeTcnModelId = config.id
             Log.d("HandLandmarks", "TCN model '${config.id}' initialized")
         }
+    }
+
+    private fun validateInterpreterSignature(interpreter: Interpreter, config: TcnModelConfig) {
+        val signatureKeys = interpreter.signatureKeys.toSet()
+        require(config.signatureKey in signatureKeys) {
+            "${config.id}: signature '${config.signatureKey}' was not found. " +
+                "Available signatures: ${signatureKeys.joinToString()}"
+        }
+
+        val actualInputs = interpreter.getSignatureInputs(config.signatureKey).toSet()
+        val configuredInputs = buildSet {
+            add(config.frameInputName)
+            config.lengthInputName?.let(::add)
+        }
+        require(actualInputs == configuredInputs) {
+            "${config.id}: configured signature inputs " +
+                "${configuredInputs.joinToString(prefix = "[", postfix = "]")} do not match model inputs " +
+                actualInputs.joinToString(prefix = "[", postfix = "]")
+        }
+
+        val actualOutputs = interpreter.getSignatureOutputs(config.signatureKey).toSet()
+        require(config.outputName in actualOutputs) {
+            "${config.id}: configured output '${config.outputName}' was not found. " +
+                "Available outputs: ${actualOutputs.joinToString()}"
+        }
+
+        val inputTensor = interpreter.getInputTensorFromSignature(
+            config.frameInputName,
+            config.signatureKey
+        )
+        val expectedInputShape = intArrayOf(1, config.sequenceLength, config.featureDimension)
+        require(inputTensor.shape().contentEquals(expectedInputShape)) {
+            "${config.id}: input '${config.frameInputName}' has shape " +
+                "${inputTensor.shape().contentToString()}, expected ${expectedInputShape.contentToString()}"
+        }
+
+        val outputTensor = interpreter.getOutputTensorFromSignature(
+            config.outputName,
+            config.signatureKey
+        )
+        val expectedOutputShape = intArrayOf(1, config.classCount)
+        require(outputTensor.shape().contentEquals(expectedOutputShape)) {
+            "${config.id}: output '${config.outputName}' has shape " +
+                "${outputTensor.shape().contentToString()}, expected ${expectedOutputShape.contentToString()}"
+        }
+
+        Log.d(
+            "HandLandmarks",
+            "${config.id}: signature '${config.signatureKey}', " +
+                "inputs=${actualInputs.joinToString()}, outputs=${actualOutputs.joinToString()}"
+        )
     }
 
     private fun loadAssetModel(assetName: String): MappedByteBuffer {

@@ -8,28 +8,21 @@ import {
   type TfliteModelConfig,
 } from '@/config/tfliteModels';
 
-const THROTTLE_MS = 120;
+const THROTTLE_MS = 60;
 const MIN_CONFIDENCE = 0.65;
-const SOURCE_WINDOW_SIZE = 20;
 const REQUIRED_STABLE_PREDICTIONS = 2;
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return 'Unknown TFLite error';
+}
 
 const ALPHABET_LABELS = new Set([
   'A', 'Ă', 'Â', 'B', 'C', 'D', 'Đ', 'E', 'Ê', 'G',
   'H', 'I', 'K', 'L', 'M', 'N', 'O', 'Ô', 'Ơ', 'P',
   'Q', 'R', 'S', 'T', 'U', 'Ư', 'V', 'X', 'Y', 'Z',
 ]);
-
-function resampleFrames(frames: number[][], targetLength: number): number[][] {
-  if (frames.length === 0 || targetLength <= 0) return [];
-
-  return Array.from({ length: targetLength }, (_, index) => {
-    const sourceIndex = Math.min(
-      frames.length - 1,
-      Math.floor((index * frames.length) / targetLength),
-    );
-    return frames[sourceIndex];
-  });
-}
 
 const { HandLandmarks } = NativeModules;
 const eventEmitter = new NativeEventEmitter(HandLandmarks);
@@ -63,8 +56,10 @@ export default function AlphabetMode({ onResult, theme }: Props) {
       .then((config) => {
         if (mounted) modelConfig.current = config;
       })
-      .catch(() => {
-        if (mounted) setStatusMsg(t('camera.networkError'));
+      .catch((error: unknown) => {
+        const message = getErrorMessage(error);
+        console.error('Failed to load alphabet TFLite config:', error);
+        if (mounted) setStatusMsg(t('camera.modelError', { message }));
       });
 
     return () => {
@@ -105,15 +100,14 @@ export default function AlphabetMode({ onResult, theme }: Props) {
       if (frameVector.length !== config.featureDimension) return;
 
       frameBuffer.current.push(frameVector);
-      if (frameBuffer.current.length > SOURCE_WINDOW_SIZE) frameBuffer.current.shift();
+      if (frameBuffer.current.length > config.sequenceLength) frameBuffer.current.shift();
 
       if (
-        frameBuffer.current.length === SOURCE_WINDOW_SIZE &&
+        frameBuffer.current.length === config.sequenceLength &&
         !isPredicting.current &&
         now - lastPredictionTime.current >= THROTTLE_MS
       ) {
-        const frames = resampleFrames(frameBuffer.current, config.sequenceLength);
-        predictLocal(frames, sequenceGeneration.current);
+        predictLocal(frameBuffer.current.slice(), sequenceGeneration.current);
       }
     });
 
@@ -156,9 +150,20 @@ export default function AlphabetMode({ onResult, theme }: Props) {
       } else {
         candidateLabel.current = '';
         candidateCount.current = 0;
+        setStatusMsg(
+          ALPHABET_LABELS.has(label)
+            ? t('camera.lowConfidence', {
+                label,
+                confidence: (confidence * 100).toFixed(0),
+                minimum: MIN_CONFIDENCE * 100,
+              })
+            : t('camera.invalidLabel', { label: label || '(empty)' }),
+        );
       }
-    } catch (e) {
-      setStatusMsg(t('camera.networkError'));
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      console.error('Alphabet TFLite prediction failed:', error);
+      setStatusMsg(t('camera.modelError', { message }));
     } finally {
       lastPredictionTime.current = Date.now();
       isPredicting.current = false;
@@ -181,7 +186,7 @@ export default function AlphabetMode({ onResult, theme }: Props) {
             <View style={styles.infoColumn}>
               <Text style={styles.modeTitle}>{t('camera.alphabetModeTitle')}</Text>
               <Text style={styles.subText}>
-                {detectedChar ? statusMsg : t('camera.analyzing')}
+                {statusMsg || t('camera.analyzing')}
               </Text>
             </View>
           </View>

@@ -88,15 +88,15 @@
       "numThreads": 4
     },
     "bigru_attention_alphabet_20260818_114440": {
-      "displayName": "TCN Vietnamese Alphabet 2026-09-12",
+      "displayName": "BiGRU Attention Vietnamese Alphabet 2026-08-18",
       "modelFile": "bigru_attention_alphabet_20260818_114440.tflite",
       "labelsFile": "bigru_attention_alphabet_20260818_114440_display_labels.json",
       "sequenceLength": 60,
       "featureDimension": 126,
       "classCount": 30,
       "signatureKey": "serving_default",
-      "frameInputName": "inputs",
-      "lengthInputName": "lengths",
+      "frameInputName": "args_0",
+      "lengthInputName": "",
       "outputName": "output_0",
       "applySoftmax": true,
       "mirrorInput": false,

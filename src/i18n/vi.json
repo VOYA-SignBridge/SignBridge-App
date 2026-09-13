@@ -92,7 +92,10 @@
     "translating": "Đang dịch...",
     "done": "Xong!",
     "unclear": "Không rõ",
-    "networkError": "Lỗi mạng"
+    "networkError": "Lỗi mạng",
+    "modelError": "Lỗi model: {{message}}",
+    "lowConfidence": "{{label}}: {{confidence}}% (cần {{minimum}}%)",
+    "invalidLabel": "Nhãn không hợp lệ: {{label}}"
   },
   "conversation": {
     "title": "Trò chuyện",
