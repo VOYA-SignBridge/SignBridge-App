@@ -5,7 +5,8 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "cross-env NODE_ENV=development react-native run-android",
+    "android": "node scripts/run-android.cjs --device Pixel_5",
+    "android:device": "node scripts/run-android.cjs --device",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint"

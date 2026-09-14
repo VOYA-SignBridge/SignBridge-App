@@ -34,14 +34,8 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
         private const val HAND_FEATURES_PER_HAND = 63
         private const val NORMALIZATION_EPSILON = 1e-6f
         
-        init {
-            try {
-                System.loadLibrary("mediapipe_tasks_vision_jni")
-                Log.d("HandLandmarks", "MediaPipe library loaded")
-            } catch (e: UnsatisfiedLinkError) {
-                Log.e("HandLandmarks", "Failed to load MediaPipe: ${e.message}")
-            }
-        }
+        // HandLandmarker loads the matching Tasks JNI itself. Do not hard-code
+        // the old mediapipe_tasks_vision_jni name (new releases use tasks_jni).
     }
 
     private val lastProcessedTime = AtomicLong(0L)

@@ -121,9 +121,10 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.mediapipe:tasks-vision:0.10.14'
-    // LiteRT 1.0.1 still ships the 32-bit x86 JNI runtime required by the
-    // current sdk_gphone_x86 emulator. LiteRT 2.x only packages 64-bit ABIs.
+    // 0.10.35 packages the Tasks JNI for x86_64 as well as physical ARM64 phones.
+    implementation 'com.google.mediapipe:tasks-vision:0.10.35'
+    // Keep the existing LiteRT runtime for word models, independently of
+    // the ExecuTorch runtime used by alphabet recognition.
     implementation 'com.google.ai.edge.litert:litert:1.0.1'
     // HandGCN alphabet only. Includes XNNPACK and portable CPU kernels.
     implementation 'org.pytorch:executorch-android:1.4.0'

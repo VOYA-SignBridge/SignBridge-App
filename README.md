@@ -73,6 +73,47 @@ cd android
 .\gradlew.bat :app:assembleDebug -PreactNativeArchitectures=arm64-v8a
 ```
 
+### Pixel 5 development emulator
+
+`npm run android` explicitly selects the AVD named `Pixel_5`. Use the **Pixel 5
+hardware profile + Android 15 (API 35) Google APIs x86_64 system image**, with
+the normal 4 KB page size. The old Android 11 `x86` image is 32-bit and cannot
+load ExecuTorch. A Pixel 5 hardware profile does not require a 32-bit system
+image. Do not select the special 16 KB system image for this development AVD.
+This choice does not fix or certify the APK's separate 16 KB compatibility.
+
+MediaPipe Tasks Vision is pinned to 0.10.35 because its Tasks Core AAR contains
+the x86_64 JNI required by this emulator. The former 0.10.14 package omitted the
+vision JNI for x86_64: alphabet/word inference alone could pass while camera
+landmark extraction failed. Let `HandLandmarker` load its own matching JNI;
+do not manually load the obsolete `mediapipe_tasks_vision_jni` library name.
+The bundled hand landmark asset and alphabet/word classifier assets are unchanged.
+`RecognitionCompatibilityTest` exercises both landmark extraction and the
+registered word TFLite model in addition to the existing alphabet PTE tests.
+
+If Metro is already running in another terminal:
+
+```powershell
+# Terminal 1, from SignBridge-App:
+npm start
+# Terminal 2, from SignBridge-App:
+npm run android -- --no-bundler
+```
+
+Without an existing Metro session, use only `npm run android`. To select a
+physical phone instead, use `npm run android:device`. Both commands use the
+project's installed Expo CLI through `scripts/run-android.cjs`, which resolves
+the SDK from environment variables, `android/local.properties`, or the standard
+SDK installation directory. It sets `ANDROID_HOME` for the child process so
+Expo can discover/start the AVD even when `emulator` is absent from PATH.
+If `ANDROID_HOME` is already configured in your terminal, the equivalent direct
+command is `npx expo run:android --device Pixel_5`.
+
+Verify the running AVD with `adb -s <serial> emu avd name`,
+`adb -s <serial> shell getprop ro.product.cpu.abi` (must be `x86_64`) and
+`adb -s <serial> shell getconf PAGE_SIZE` (must be `4096`). Use the serial from
+`adb devices`; do not assume the first connected emulator is Pixel 5.
+
 The local inference contract is:
 
 1. The existing camera supplies unmirrored MediaPipe normalized XYZ landmarks.
