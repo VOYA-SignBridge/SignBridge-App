@@ -9,6 +9,7 @@ class HandLandmarksPackage : ReactPackage {
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
         return listOf(
             HandLandmarksModule(reactContext),
+            AlphabetModelModule(reactContext),
             QipedcVideoModule(reactContext),
         )
     }

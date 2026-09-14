@@ -627,6 +627,30 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
                 frameParams.putArray("frame", arr)
                 frameParams.putInt("handCount", result.landmarks().size)
                 sendEvent("onHandFrame126", frameParams)
+
+                // Alphabet needs full precision and BOTH detections, including
+                // duplicate handedness labels, for the reference slot resolver.
+                val alphabetHands = Arguments.createArray()
+                result.landmarks().forEachIndexed { index, hand ->
+                    val detection = Arguments.createMap()
+                    val category = result.handedness().getOrNull(index)?.firstOrNull()
+                    detection.putString("label", category?.categoryName())
+                    detection.putDouble("score", category?.score()?.toDouble() ?: 0.0)
+                    val points = Arguments.createArray()
+                    hand.forEach { lm ->
+                        points.pushMap(Arguments.createMap().apply {
+                            putDouble("x", lm.x().toDouble())
+                            putDouble("y", lm.y().toDouble())
+                            putDouble("z", lm.z().toDouble())
+                        })
+                    }
+                    detection.putArray("landmarks", points)
+                    alphabetHands.pushMap(detection)
+                }
+                sendEvent("onAlphabetHands", Arguments.createMap().apply {
+                    putArray("hands", alphabetHands)
+                    putDouble("timestamp", currentTime.toDouble())
+                })
             }
             
         } catch (e: Exception) {

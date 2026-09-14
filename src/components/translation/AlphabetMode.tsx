@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
-  getTfliteModelConfig,
-  predictWithTfliteModel,
-  TFLITE_MODES,
-  type TfliteModelConfig,
-} from '@/config/tfliteModels';
+  initializeAlphabetModel,
+  predictAlphabet,
+  type AlphabetModelConfig,
+} from '@/config/alphabetModel';
+import { flattenRealtimeHands } from '@/utils/alphabet/realtimeFlatten';
+import type { HandAnchors } from '@/utils/alphabet/handIdentity';
+import type { AlphabetHandsEvent } from '@/utils/alphabet/types';
 
 const THROTTLE_MS = 60;
 const MIN_CONFIDENCE = 0.65;
@@ -15,7 +17,7 @@ const REQUIRED_STABLE_PREDICTIONS = 2;
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;
-  return 'Unknown TFLite error';
+  return 'Unknown ExecuTorch error';
 }
 
 const ALPHABET_LABELS = new Set([
@@ -25,7 +27,6 @@ const ALPHABET_LABELS = new Set([
 ]);
 
 const { HandLandmarks } = NativeModules;
-const eventEmitter = new NativeEventEmitter(HandLandmarks);
 
 type Props = {
   onResult: (text: string) => void;
@@ -36,145 +37,134 @@ export default function AlphabetMode({ onResult, theme }: Props) {
   const { t } = useTranslation();
   const [statusMsg, setStatusMsg] = useState('');
   const [detectedChar, setDetectedChar] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [modelError, setModelError] = useState('');
   const [hasHand, setHasHand] = useState(false);
 
-  const frameBuffer = useRef<number[][]>([]);
-  const isPredicting = useRef(false);
-  const lastEventTime = useRef(0);
-  const lastPredictionTime = useRef(0);
-  const modelConfig = useRef<TfliteModelConfig | null>(null);
-  const candidateLabel = useRef('');
-  const candidateCount = useRef(0);
-  const lastCommittedLabel = useRef('');
-  const sequenceGeneration = useRef(0);
-
+  const onResultRef = useRef(onResult);
+  useEffect(() => {
+    onResultRef.current = onResult;
+  }, [onResult]);
 
   useEffect(() => {
     let mounted = true;
-    getTfliteModelConfig(TFLITE_MODES.alphabet)
-      .then((config) => {
-        if (mounted) modelConfig.current = config;
-      })
-      .catch((error: unknown) => {
-        const message = getErrorMessage(error);
-        console.error('Failed to load alphabet TFLite config:', error);
-        if (mounted) setStatusMsg(t('camera.modelError', { message }));
-      });
+    let config: AlphabetModelConfig | null = null;
+    let frames: number[][] = [];
+    let anchors: HandAnchors = {};
+    let predicting = false;
+    let lastFrameTime = 0;
+    let lastPredictionTime = 0;
+    let generation = 0;
+    let candidateLabel = '';
+    let candidateCount = 0;
+    let lastCommittedLabel = '';
+    setModelError('');
+
+    const resetSequence = () => {
+      frames = [];
+      anchors = {};
+      candidateLabel = '';
+      candidateCount = 0;
+      lastCommittedLabel = '';
+      generation += 1;
+      setDetectedChar('');
+      setStatusMsg('');
+    };
+
+    const predictLocal = async (snapshot: number[][], requestGeneration: number) => {
+      predicting = true;
+      try {
+        const data = await predictAlphabet(snapshot);
+        // Ignore results after unmount, hand loss or a camera gap.
+        if (!mounted || requestGeneration !== generation) return;
+        const label = String(data?.label ?? '').trim().toLocaleUpperCase('vi-VN');
+        const confidence = Number(data?.confidence ?? 0);
+        if (ALPHABET_LABELS.has(label) && confidence >= MIN_CONFIDENCE) {
+          if (candidateLabel === label) {
+            candidateCount += 1;
+          } else {
+            candidateLabel = label;
+            candidateCount = 1;
+          }
+
+          if (candidateCount >= REQUIRED_STABLE_PREDICTIONS) {
+            setDetectedChar(label);
+            setStatusMsg(`${(confidence * 100).toFixed(0)}%`);
+            if (lastCommittedLabel !== label) {
+              lastCommittedLabel = label;
+              onResultRef.current(label);
+            }
+          }
+        } else {
+          candidateLabel = '';
+          candidateCount = 0;
+          setStatusMsg(
+            ALPHABET_LABELS.has(label)
+              ? t('camera.lowConfidence', {
+                  label,
+                  confidence: (confidence * 100).toFixed(0),
+                  minimum: MIN_CONFIDENCE * 100,
+                })
+              : t('camera.invalidLabel', { label: label || '(empty)' }),
+          );
+        }
+      } catch (error: unknown) {
+        if (!mounted || requestGeneration !== generation) return;
+        console.error('Alphabet ExecuTorch prediction failed:', error);
+        config = null; // Stop retrying a broken native runtime every camera frame.
+        resetSequence();
+        setModelError(t('camera.modelError', { message: getErrorMessage(error) }));
+      } finally {
+        lastPredictionTime = Date.now();
+        predicting = false;
+      }
+    };
+
+    // Promise chain also catches a missing native module thrown synchronously.
+    Promise.resolve().then(initializeAlphabetModel).then((loaded) => {
+      if (mounted) config = loaded;
+    }).catch((error: unknown) => {
+      if (mounted) setModelError(t('camera.modelError', { message: getErrorMessage(error) }));
+    });
+
+    if (!HandLandmarks) return () => { mounted = false; };
+    const emitter = new NativeEventEmitter(HandLandmarks);
+    const presenceSub = emitter.addListener('onHandLandmarksDetected', (event) => {
+      const present = Boolean(event.landmarks?.length);
+      setHasHand(present);
+      if (!present) resetSequence();
+    });
+    const framesSub = emitter.addListener('onAlphabetHands', (event: AlphabetHandsEvent) => {
+      if (!config || !event.hands?.length) return;
+      const now = event.timestamp;
+      // Also reset after camera pauses, where no no-hand event is delivered.
+      if (lastFrameTime && now - lastFrameTime > 400) resetSequence();
+      lastFrameTime = now;
+      const vector = flattenRealtimeHands({
+        multiHandLandmarks: event.hands.map((hand) => hand.landmarks),
+        multiHandedness: event.hands.map((hand) => ({ label: hand.label, score: hand.score })),
+      }, undefined, { anchors, now });
+      frames.push(Array.from(vector));
+      if (frames.length > config.sequenceLength) frames.shift();
+      if (frames.length === config.sequenceLength && !predicting &&
+          Date.now() - lastPredictionTime >= THROTTLE_MS) {
+        void predictLocal(frames.slice(), generation);
+      }
+    });
 
     return () => {
       mounted = false;
+      generation += 1;
+      presenceSub.remove();
+      framesSub.remove();
     };
   }, [t]);
-
-  useEffect(() => {
-    const sub = eventEmitter.addListener('onHandLandmarksDetected', (event) => {
-      if (!event.landmarks || event.landmarks.length === 0) {
-        setHasHand(false);
-        setDetectedChar('');
-        setStatusMsg('');
-        frameBuffer.current = [];
-        candidateLabel.current = '';
-        candidateCount.current = 0;
-        lastCommittedLabel.current = '';
-        sequenceGeneration.current += 1;
-        return;
-      }
-
-      setHasHand(true);
-    });
-
-    return () => sub.remove();
-  }, []);
-
-  useEffect(() => {
-    const sub = eventEmitter.addListener('onHandFrame126', (event) => {
-      const now = Date.now();
-      if (now - lastEventTime.current < 50) return;
-      lastEventTime.current = now;
-
-      const config = modelConfig.current;
-      if (!config) return;
-
-      const frameVector = Array.from(event.frame ?? []) as number[];
-      if (frameVector.length !== config.featureDimension) return;
-
-      frameBuffer.current.push(frameVector);
-      if (frameBuffer.current.length > config.sequenceLength) frameBuffer.current.shift();
-
-      if (
-        frameBuffer.current.length === config.sequenceLength &&
-        !isPredicting.current &&
-        now - lastPredictionTime.current >= THROTTLE_MS
-      ) {
-        predictLocal(frameBuffer.current.slice(), sequenceGeneration.current);
-      }
-    });
-
-    return () => sub.remove();
-  }, []);
-
-  const predictLocal = async (frames: number[][], generation: number) => {
-    if (isPredicting.current) return;
-    isPredicting.current = true;
-    setIsProcessing(true);
-
-    try {
-      const data = await predictWithTfliteModel(frames, TFLITE_MODES.alphabet);
-      const label = String(data?.label ?? '')
-        .trim()
-        .toLocaleUpperCase('vi-VN');
-      const confidence = Number(data?.confidence ?? 0);
-
-      // Ignore a prediction that completed after the hand disappeared and the
-      // active sequence was reset.
-      if (generation !== sequenceGeneration.current) return;
-
-      if (ALPHABET_LABELS.has(label) && confidence >= MIN_CONFIDENCE) {
-        if (candidateLabel.current === label) {
-          candidateCount.current += 1;
-        } else {
-          candidateLabel.current = label;
-          candidateCount.current = 1;
-        }
-
-        if (candidateCount.current >= REQUIRED_STABLE_PREDICTIONS) {
-          setDetectedChar(label);
-          setStatusMsg(`${(confidence * 100).toFixed(0)}%`);
-
-          if (lastCommittedLabel.current !== label) {
-            lastCommittedLabel.current = label;
-            onResult(label);
-          }
-        }
-      } else {
-        candidateLabel.current = '';
-        candidateCount.current = 0;
-        setStatusMsg(
-          ALPHABET_LABELS.has(label)
-            ? t('camera.lowConfidence', {
-                label,
-                confidence: (confidence * 100).toFixed(0),
-                minimum: MIN_CONFIDENCE * 100,
-              })
-            : t('camera.invalidLabel', { label: label || '(empty)' }),
-        );
-      }
-    } catch (error: unknown) {
-      const message = getErrorMessage(error);
-      console.error('Alphabet TFLite prediction failed:', error);
-      setStatusMsg(t('camera.modelError', { message }));
-    } finally {
-      lastPredictionTime.current = Date.now();
-      isPredicting.current = false;
-      setIsProcessing(false);
-    }
-  };
 
   return (
     <View style={styles.container}>
       <View style={[styles.statusBox, !hasHand && styles.statusBoxWarning]}>
-        {!hasHand ? (
+        {modelError ? (
+          <Text style={styles.statusText}>{modelError}</Text>
+        ) : !hasHand ? (
           <Text style={styles.statusText}>{t('camera.noHand')}</Text>
         ) : (
           <View style={styles.resultContainer}>
