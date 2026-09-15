@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.exp
 import kotlin.math.round
 import com.nmnghi.VOYA_App.HandLandmarkerHolder
+import com.nmnghi.VOYA_App.alphabet.AlphabetPreprocessing
+import com.nmnghi.VOYA_App.alphabet.AlphabetRuntime
 
 
 class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
@@ -53,6 +55,22 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     private var activeTcnModelId: String? = null
     private var tcnLabels: Map<Int, String> = emptyMap()
     private val tcnRegistry: TcnRegistry by lazy { loadTcnRegistry() }
+    private var alphabetRuntime: AlphabetRuntime? = null
+    private val lastAlphabetTimestamp = AtomicLong(-1L)
+
+    private fun ensureAlphabetRuntime(): AlphabetRuntime = alphabetRuntime
+        ?: AlphabetRuntime(reactApplicationContext).also { alphabetRuntime = it }
+
+    @ReactMethod
+    fun startAlphabetCapture() {
+        lastAlphabetTimestamp.set(-1L)
+        HandLandmarkerHolder.alphabetCaptureEnabled = true
+    }
+
+    @ReactMethod
+    fun stopAlphabetCapture() {
+        HandLandmarkerHolder.alphabetCaptureEnabled = false
+    }
 
     private data class TcnModelConfig(
         val id: String,
@@ -100,7 +118,11 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     @ReactMethod
     fun getTcnModelConfig(modelKey: String, promise: Promise) {
         try {
-            promise.resolve(modelConfigToWritableMap(resolveTcnModel(modelKey)))
+            val config = resolveTcnModel(modelKey)
+            if (config.normalizationVersion == AlphabetPreprocessing.VERSION) {
+                synchronized(tcnLock) { ensureAlphabetRuntime() }
+            }
+            promise.resolve(modelConfigToWritableMap(config))
         } catch (e: Exception) {
             promise.reject("TCN_CONFIG_FAILED", e.message, e)
         }
@@ -128,6 +150,11 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     private fun predictTcnInternal(frames: ReadableArray, modelKey: String?, promise: Promise) {
         try {
             val config = resolveTcnModel(modelKey)
+
+            if (config.normalizationVersion == AlphabetPreprocessing.VERSION) {
+                predictAlphabet(frames, false, promise)
+                return
+            }
 
             if (frames.size() != config.sequenceLength) {
                 promise.reject(
@@ -213,6 +240,42 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     }
 
     @ReactMethod
+    fun debugAlphabetPredict(frames: ReadableArray, alreadyNormalized: Boolean, promise: Promise) {
+        if (!BuildConfig.DEBUG) {
+            promise.reject("DEBUG_ONLY", "Raw alphabet logits are only available in debug builds")
+            return
+        }
+        predictAlphabet(frames, alreadyNormalized, promise)
+    }
+
+    private fun predictAlphabet(frames: ReadableArray, alreadyNormalized: Boolean, promise: Promise) {
+        try {
+            require(frames.size() == 60) { "Alphabet requires 60 frames" }
+            val input = Array(60) { t ->
+                val frame = requireNotNull(frames.getArray(t))
+                require(frame.size() == 126) { "Alphabet frame $t requires 126 values" }
+                FloatArray(126) { j -> frame.getDouble(j).toFloat() }
+            }
+            val result = synchronized(tcnLock) {
+                val runtime = ensureAlphabetRuntime()
+                val logits = if (alreadyNormalized) runtime.predictNormalized(input) else runtime.predictRaw(input)
+                val index = runtime.classIndex(logits)
+                Arguments.createMap().apply {
+                    putString("modelId", runtime.id)
+                    putString("modelSha256", runtime.modelSha256)
+                    putInt("classIndex", index)
+                    putString("label", runtime.labels[index])
+                    putDouble("confidence", runtime.confidence(logits))
+                    putArray("logits", Arguments.createArray().apply { logits.forEach { pushDouble(it.toDouble()) } })
+                }
+            }
+            promise.resolve(result)
+        } catch (e: Exception) {
+            promise.reject("ALPHABET_PREDICTION_FAILED", e.message, e)
+        }
+    }
+
+    @ReactMethod
     fun initModel() {
         if (HandLandmarkerHolder.handLandmarker != null) {
             Log.d("HandLandmarks", "Model already initialized")
@@ -250,7 +313,7 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
             .setMinHandPresenceConfidence(0.45f)
             .setMinTrackingConfidence(0.5f)
             .setRunningMode(RunningMode.LIVE_STREAM)
-            .setResultListener { result, _ -> processResult(result) }
+            .setResultListener { result, image -> processResult(result, image.width, image.height) }
             .setErrorListener { error -> Log.e("HandLandmarks", "MediaPipe error: ${error.message}") }
             .build()
 
@@ -431,7 +494,7 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
             "${config.id}: this landmark pipeline requires featureDimension=$HAND_FEATURE_DIM"
         }
         require(config.classCount > 0) { "${config.id}: classCount must be positive" }
-        require(config.normalizationVersion == HANDS126_NORMALIZATION_VERSION) {
+        require(config.normalizationVersion in setOf(HANDS126_NORMALIZATION_VERSION, AlphabetPreprocessing.VERSION)) {
             "${config.id}: unsupported normalizationVersion '${config.normalizationVersion}'"
         }
     }
@@ -455,6 +518,7 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
             putBoolean("mirrorInput", config.mirrorInput)
             putBoolean("swapHandedness", config.swapHandedness)
             putString("normalizationVersion", config.normalizationVersion)
+            if (config.normalizationVersion == AlphabetPreprocessing.VERSION) putInt("sampleFps", 30)
         }
     }
 
@@ -564,7 +628,41 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
         return normalized
     }
 
-    private fun processResult(result: HandLandmarkerResult) {
+    private fun processResult(result: HandLandmarkerResult, imageWidth: Int, imageHeight: Int) {
+        // Alphabet receives every completed detection, including empty frames,
+        // with its submission timestamp. The word event/throttle below is unchanged.
+        if (HandLandmarkerHolder.alphabetCaptureEnabled) {
+            val timestamp = result.timestampMs()
+            if (timestamp > lastAlphabetTimestamp.get()) {
+                lastAlphabetTimestamp.set(timestamp)
+                val vector = extract126(result)
+                sendEvent("onAlphabetFrame126", Arguments.createMap().apply {
+                    putDouble("timestampMs", timestamp.toDouble())
+                    putInt("handCount", result.landmarks().size)
+                    putInt("imageWidth", imageWidth)
+                    putInt("imageHeight", imageHeight)
+                    // Keep every detection: label-only extract126 can overwrite
+                    // a hand if MediaPipe labels both detections the same.
+                    putArray("detections", Arguments.createArray().apply {
+                        result.landmarks().forEachIndexed { index, points ->
+                            val category = result.handedness().getOrNull(index)?.firstOrNull()
+                            pushMap(Arguments.createMap().apply {
+                                putString("label", category?.categoryName() ?: "")
+                                putDouble("score", category?.score()?.toDouble() ?: 0.0)
+                                putArray("landmarks", Arguments.createArray().apply {
+                                    points.forEach { p -> pushMap(Arguments.createMap().apply {
+                                        putDouble("x", p.x().toDouble())
+                                        putDouble("y", p.y().toDouble())
+                                        putDouble("z", p.z().toDouble())
+                                    }) }
+                                })
+                            })
+                        }
+                    })
+                    putArray("frame", Arguments.createArray().apply { vector.forEach { pushDouble(it.toDouble()) } })
+                })
+            }
+        }
         val currentTime = System.currentTimeMillis()
         
         if (currentTime - lastProcessedTime.get() < THROTTLE_INTERVAL_MS) {
@@ -642,6 +740,9 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
             HandLandmarkerHolder.handLandmarker?.close()
             HandLandmarkerHolder.handLandmarker = null
             synchronized(tcnLock) {
+                HandLandmarkerHolder.alphabetCaptureEnabled = false
+                alphabetRuntime?.close()
+                alphabetRuntime = null
                 tcnInterpreter?.close()
                 tcnInterpreter = null
                 activeTcnModelId = null

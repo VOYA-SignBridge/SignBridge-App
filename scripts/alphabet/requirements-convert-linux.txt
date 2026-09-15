@@ -1,0 +1,8 @@
+# Linux / Python 3.11. Direct litert_torch path. Windows has no litert-converter wheel.
+# torchao 0.17's native extensions target torch 2.11; install both CPU wheels first.
+torch==2.11.0
+torchao==0.17.0
+numpy==2.1.3
+litert-torch==0.9.4
+ai-edge-litert==2.2.0
+litert-converter==0.4.0

@@ -1,0 +1,68 @@
+VOYA-Collector/frontend/playwright.config.ts(1,39): error TS2307: Cannot find module '@playwright/test' or its corresponding type declarations.
+VOYA-Collector/frontend/src/api/axiosClient.test.ts(1,65): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+VOYA-Collector/frontend/src/api/axiosClient.ts(31,30): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/api/axiosClient.ts(117,19): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/api/axiosClient.ts(143,21): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/api/realtime.ts(134,21): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/api/realtime.ts(137,34): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/api/realtime.ts(161,21): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/api/tts.ts(54,21): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/api/tts.ts(94,21): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/App.tsx(1,79): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/dashboard/HeroSection.tsx(2,29): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/dashboard/LandingCTASection.tsx(1,29): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/dashboard/MyContributionSection.tsx(2,29): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/dashboard/QuickActionsSection.tsx(3,29): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/Footer.tsx(1,29): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/FullscreenCaptureModal.tsx(3,24): error TS2307: Cannot find module '@mediapipe/camera_utils' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/FullscreenCaptureModal.tsx(4,26): error TS2307: Cannot find module '@mediapipe/drawing_utils' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/FullscreenCaptureModal.tsx(66,49): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/components/FullscreenCaptureModal.tsx(80,15): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/components/FullscreenCaptureModal.tsx(85,46): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/components/FullscreenCaptureModal.tsx(801,7): error TS2578: Unused '@ts-expect-error' directive.
+VOYA-Collector/frontend/src/components/FullscreenCaptureModal.tsx(806,7): error TS2578: Unused '@ts-expect-error' directive.
+VOYA-Collector/frontend/src/components/Layout.tsx(2,51): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/Layout.tsx(117,21): error TS7031: Binding element 'isActive' implicitly has an 'any' type.
+VOYA-Collector/frontend/src/components/Layout.tsx(151,27): error TS7031: Binding element 'isActive' implicitly has an 'any' type.
+VOYA-Collector/frontend/src/components/realtime/RealtimeRuntime.tsx(26,24): error TS2307: Cannot find module '@mediapipe/camera_utils' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/realtime/RealtimeRuntime.tsx(89,44): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/components/realtime/RealtimeRuntime.tsx(686,23): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/components/realtime/RealtimeRuntime.tsx(695,23): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/components/realtime/RealtimeRuntime.tsx(722,21): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/components/realtime/RealtimeRuntime.tsx(1002,34): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/components/realtime/RealtimeRuntime.tsx(1066,24): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/components/realtime/RealtimeRuntime.tsx(1080,20): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/components/SessionSumary.tsx(12,58): error TS2307: Cannot find module 'recharts' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/SessionSumary.tsx(16,12): error TS2307: Cannot find module 'recharts' or its corresponding type declarations.
+VOYA-Collector/frontend/src/components/ui/PageHeader.tsx(1,22): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/config/capture.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+VOYA-Collector/frontend/src/config/handTracking.ts(61,15): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/hooks/useIdleLogout.ts(23,22): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/hooks/useSpeechToText.ts(55,47): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/hooks/useSpeechToText.ts(56,28): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+VOYA-Collector/frontend/src/hooks/useTrainingAPI.test.ts(1,65): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+VOYA-Collector/frontend/src/hooks/useTrainingAPI.test.ts(2,33): error TS2307: Cannot find module '@testing-library/react' or its corresponding type declarations.
+VOYA-Collector/frontend/src/main.tsx(2,28): error TS7016: Could not find a declaration file for module 'react-dom/client'. 'D:/SignBridge/SignBridge-App/node_modules/react-dom/client.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-dom` if it exists or add a new declaration (.d.ts) file containing `declare module 'react-dom/client';`
+VOYA-Collector/frontend/src/main.tsx(4,17): error TS5097: An import path can only end with a '.tsx' extension when 'allowImportingTsExtensions' is enabled.
+VOYA-Collector/frontend/src/pages/ForgotPasswordPage.tsx(2,22): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/pages/LoginPage.tsx(2,52): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/pages/NotAuthorizedPage.tsx(2,29): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/pages/RegisterPage.tsx(2,52): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/pages/ResetPasswordPage.tsx(2,39): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/pages/training/components/TestTrainedModelModal.tsx(3,24): error TS2307: Cannot find module '@mediapipe/camera_utils' or its corresponding type declarations.
+VOYA-Collector/frontend/src/pages/UploadPage.tsx(2,29): error TS2307: Cannot find module 'react-router-dom' or its corresponding type declarations.
+VOYA-Collector/frontend/src/utils/alphabetLabelMatch.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+VOYA-Collector/frontend/src/utils/handIdentity.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+VOYA-Collector/frontend/src/utils/realtimeFlatten.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+VOYA-Collector/frontend/src/utils/redirect.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+VOYA-Collector/frontend/src/utils/session.test.ts(1,53): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+VOYA-Collector/frontend/tests-e2e/golden-path.spec.ts(1,41): error TS2307: Cannot find module '@playwright/test' or its corresponding type declarations.
+VOYA-Collector/frontend/tests-e2e/golden-path.spec.ts(42,71): error TS7031: Binding element 'page' implicitly has an 'any' type.
+VOYA-Collector/frontend/tests-e2e/golden-path.spec.ts(55,68): error TS7031: Binding element 'page' implicitly has an 'any' type.
+VOYA-Collector/frontend/tests-e2e/golden-path.spec.ts(99,67): error TS7031: Binding element 'page' implicitly has an 'any' type.
+VOYA-Collector/frontend/tests-e2e/golden-path.spec.ts(115,81): error TS7031: Binding element 'page' implicitly has an 'any' type.
+VOYA-Collector/frontend/tests-e2e/golden-path.spec.ts(131,71): error TS7031: Binding element 'page' implicitly has an 'any' type.
+VOYA-Collector/frontend/vite.config.ts(1,30): error TS2307: Cannot find module 'vitest/config' or its corresponding type declarations.
+VOYA-Collector/frontend/vite.config.ts(2,19): error TS2307: Cannot find module '@vitejs/plugin-react' or its corresponding type declarations.
+VOYA-Collector/frontend/vite.config.ts(5,32): error TS7031: Binding element 'command' implicitly has an 'any' type.

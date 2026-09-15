@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": [
+    "../../src/components/translation/AlphabetMode.tsx",
+    "../../src/config/tfliteModels.ts",
+    "../../src/utils/alphabetSampling.ts"
+  ],
+  "exclude": ["../../VOYA-Collector", "../../node_modules"]
+}

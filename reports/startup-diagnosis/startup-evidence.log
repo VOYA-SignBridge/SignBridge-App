@@ -1,0 +1,6 @@
+09-15 21:33:46.069  7409 13012 W unknown:BridgelessReact: ReactHost{0}.isMetroRunning()
+09-15 21:33:46.176  7409 13015 W unknown:BridgelessReact: ReactHost{0}.isMetroRunning(): Async result = true
+09-15 21:33:46.178  7409 13012 W unknown:BridgelessReact: ReactHost{0}.loadJSBundleFromMetro()
+09-15 21:33:53.306  7409 13015 W unknown:BridgelessReact: ReactHost{0}.loadJSBundleFromMetro(): Creating BundleLoader
+09-15 21:33:56.238  7409 13046 I ReactNativeJS: Running "main" with {"rootTag":1,"initialProps":{},"fabric":true}
+09-15 21:34:01.144  7409 13046 I ReactNativeJS: [Dict] Local: 5 từ

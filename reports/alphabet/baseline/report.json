@@ -1,0 +1,134 @@
+{
+  "versions": {
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.8.0+cpu",
+    "numpy": "2.1.3",
+    "litert-torch": null,
+    "ai-edge-litert": "2.1.4",
+    "tensorflow": null
+  },
+  "checkpointSha256": "0f6626b2857827645c7139e4870d02cfd905e5fcf9c3b4d879d266415f0237eb",
+  "strictLoad": true,
+  "resolvedModelConfig": {
+    "model": "BiGRU + Attention",
+    "input_dim": 126,
+    "output_dim": 30,
+    "hidden_size": 64,
+    "num_layers": 2,
+    "dropout": 0.3
+  },
+  "contract": {
+    "checkpointSha256": "0f6626b2857827645c7139e4870d02cfd905e5fcf9c3b4d879d266415f0237eb",
+    "modelConfig": {
+      "hidden_size": 64,
+      "num_layers": 2,
+      "dropout": 0.3
+    },
+    "configEvidence": {
+      "reason": "Legacy train_tcn.build_checkpoint writes TCN fields even for BiGRU. Do not interpret levels=3 as GRU layers.",
+      "hidden_size": "gru.weight_hh_l0 shape [192,64]: 3 gates, H=64",
+      "num_layers": "Only l0/l1 and both reverse directions exist in model_state_dict",
+      "dropout": "checkpoint.model_config.dropout and training_config.dropout are both 0.3",
+      "source": "VOYA-Collector/processed/train_utils/models/bigru_attention.py"
+    },
+    "sampleFps": 30,
+    "sampleFpsEvidence": "VOYA-Collector/frontend/src/config/capture.ts: SAMPLE_FPS=30, TARGET_FRAMES=60; historical capture timestamps not available",
+    "swapHandedness": true,
+    "mirrorInput": false,
+    "orientationEvidence": [
+      "VOYA-Collector/frontend/src/utils/realtimeFlatten.ts: toDetections swaps raw MP labels once",
+      "VOYA-Collector/frontend/src/config/handTracking.ts: MIRROR_SERVING_PAYLOAD=false",
+      "VOYA-Collector/backend/realtime_service/app/contracts.py: swapped_mp_handedness_slots"
+    ],
+    "normalizationVersion": "alphabet_hands126_v1",
+    "normalization": "Swap raw MP hand blocks once; XY subtract each wrist, divide by max span of non-wrist valid XY points; keep Z unchanged. No rounding. Missing landmarks remain zero; missing wrist invalidates that hand.",
+    "missingFramePolicy": "Timestamp bins at 30 FPS; zero-fill missing bins and empty detections, no carry-forward; restart after a gap longer than one window. Never predict when the current detection is empty.",
+    "limitation": "Training sources contain differing capture/video missing-frame and mirror policies. This pins the serving contract; empirical accuracy/orientation still needs the checkpoint's validation/test data."
+  },
+  "historicalCheckpointMetrics": {
+    "test_acc": 0.9303621169916435,
+    "test_f1": 0.927258907516341,
+    "handedness": {
+      "left_only_acc": 0.9041095890410958,
+      "left_only_n": 146,
+      "right_only_acc": 0.9483568075117371,
+      "right_only_n": 213,
+      "both_acc": 0.0,
+      "both_n": 0
+    }
+  },
+  "accuracy": null,
+  "androidParity": null,
+  "afterConvertParity": null,
+  "newConversionExecuted": false,
+  "torchExportParity": {
+    "sampleCount": 64,
+    "argmaxAgreement": 1.0,
+    "maxAbsoluteError": 0.0,
+    "meanAbsoluteError": 0.0,
+    "maxRelativeError": 0.0,
+    "meanRelativeError": 0.0,
+    "relativeDenominatorFloor": 1e-06,
+    "atol": 0.0001,
+    "rtol": 0.0001,
+    "allclose": true,
+    "changedArgmax": []
+  },
+  "serializedTfliteParity": {
+    "sampleCount": 64,
+    "argmaxAgreement": 1.0,
+    "maxAbsoluteError": 2.384185791015625e-06,
+    "meanAbsoluteError": 3.8477204119165737e-07,
+    "maxRelativeError": 0.00010649667768400153,
+    "meanRelativeError": 4.564956762703131e-07,
+    "relativeDenominatorFloor": 1e-06,
+    "atol": 0.0001,
+    "rtol": 0.0001,
+    "allclose": true,
+    "changedArgmax": []
+  },
+  "tfliteSha256": "3f22ac371c3a8d947d0a0f7ae5fe5aa2e77b447361e8407c083a210b366f259c",
+  "tfliteMetadata": {
+    "signatureKey": "serving_default",
+    "frameInputName": "args_0",
+    "outputName": "output_0",
+    "signatures": {
+      "serving_default": {
+        "inputs": [
+          "args_0"
+        ],
+        "outputs": [
+          "output_0"
+        ]
+      }
+    },
+    "input": {
+      "name": "serving_default_args_0",
+      "shape": [
+        1,
+        60,
+        126
+      ],
+      "dtype": "<class 'numpy.float32'>",
+      "quantization": [
+        0.0,
+        0
+      ]
+    },
+    "output": {
+      "name": "serving_default_output_0_output",
+      "shape": [
+        1,
+        30
+      ],
+      "dtype": "<class 'numpy.float32'>",
+      "quantization": [
+        0.0,
+        0
+      ]
+    }
+  },
+  "existingLabelsMatchCheckpoint": true,
+  "pythonParityPassed": true
+}

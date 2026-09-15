@@ -1,0 +1,11 @@
+{
+  "torchVersion": "2.13.0+cpu",
+  "samples": 64,
+  "argmaxAgreement": 1.0,
+  "changedArgmax": [],
+  "maxAbsoluteError": 5.7220458984375e-06,
+  "meanAbsoluteError": 8.675424965076672e-07,
+  "maxRelativeError": 0.0011493861675262451,
+  "allclose": true,
+  "pteZeroArgmax": 10
+}

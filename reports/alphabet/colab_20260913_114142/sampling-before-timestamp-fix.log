@@ -1,0 +1,36 @@
+✔ 60 samples at 30 FPS span 1967ms, regardless of callback arrival time (1.94ms)
+✔ slow callbacks preserve time with zero bins, never stretch the gesture (0.2824ms)
+✖ native millisecond truncation must not drop every third 30 FPS frame (2.265ms)
+✔ empty detection is a real zero frame in the window (0.3561ms)
+✔ rejects duplicate/out-of-order/invalid timestamps and nonfinite features (0.1899ms)
+✔ keeps latest sample within a time bin and copies caller data (0.3475ms)
+✔ long interruption starts a fresh window; explicit reset handles mode changes (0.1459ms)
+✔ word model, registry and WordMode are unchanged from the initial workspace (2.4124ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 362.6935
+
+✖ failing tests:
+
+test at scripts\alphabet\test_sampling.cjs:30:1
+✖ native millisecond truncation must not drop every third 30 FPS frame (2.265ms)
+  AssertionError [ERR_ASSERTION]: All 60 source frames must fill one window
+      at TestContext.<anonymous> (D:\SignBridge\SignBridge-App\scripts\alphabet\test_sampling.cjs:36:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -1,0 +1,39 @@
+diff --git a/extension/android/CMakeLists.txt b/extension/android/CMakeLists.txt
+index c94b952..a7e44a1 100644
+--- a/extension/android/CMakeLists.txt
++++ b/extension/android/CMakeLists.txt
+@@ -49,8 +49,8 @@ add_custom_command(
+   OUTPUT
+     "${CMAKE_CURRENT_BINARY_DIR}/third-party/fbjni/prefab/modules/fbjni/include/"
+     "${CMAKE_CURRENT_BINARY_DIR}/third-party/fbjni/prefab/modules/fbjni/libs/android.${ANDROID_ABI}/libfbjni.so"
+-  COMMAND unzip -o ${FBJNI_DOWNLOAD_PATH} -d
+-          ${CMAKE_CURRENT_BINARY_DIR}/third-party/fbjni
++  COMMAND ${CMAKE_COMMAND} -E tar xf ${FBJNI_DOWNLOAD_PATH}
++  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/third-party/fbjni
+   DEPENDS "${FBJNI_DOWNLOAD_PATH}"
+ )
+ 
+diff --git a/third-party/CMakeLists.txt b/third-party/CMakeLists.txt
+index 40c99b5..e791c8d 100644
+--- a/third-party/CMakeLists.txt
++++ b/third-party/CMakeLists.txt
+@@ -46,6 +46,10 @@ else()
+   set(_flatbuffers_ep_additional_args)
+ endif()
+ 
++if(SIGNBRIDGE_HOST_FLATC)
++  add_executable(flatc IMPORTED GLOBAL)
++  set_target_properties(flatc PROPERTIES IMPORTED_LOCATION "${SIGNBRIDGE_HOST_FLATC}")
++else()
+ # We use ExternalProject to build flatc from source to force it target the host.
+ # Otherwise, flatc will target the project's toolchain (i.e. iOS, or Android).
+ ExternalProject_Add(
+@@ -87,6 +91,8 @@ else()
+   )
+ endif()
+ 
++endif()
++
+ # TODO: re-enable once flatbuffers is added as a subdirectory.
+ # set(FLATBUFFERS_BUILD_FLATC OFF) set(FLATBUFFERS_INSTALL OFF)
+ # set(FLATBUFFERS_BUILD_FLATHASH OFF) set(FLATBUFFERS_BUILD_FLATLIB OFF)

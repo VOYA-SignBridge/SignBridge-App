@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
@@ -7,6 +7,9 @@ import {
   TFLITE_MODES,
   type TfliteModelConfig,
 } from '@/config/tfliteModels';
+import { AlphabetSampler } from '@/utils/alphabetSampling';
+import { AlphabetHandTracker, readAlphabetFrame, type AlphabetCapture, type AlphabetFrame } from '@/utils/alphabetCamera';
+import AlphabetDiagnostics from './AlphabetDiagnostics';
 
 const THROTTLE_MS = 60;
 const MIN_CONFIDENCE = 0.65;
@@ -36,88 +39,28 @@ export default function AlphabetMode({ onResult, theme }: Props) {
   const { t } = useTranslation();
   const [statusMsg, setStatusMsg] = useState('');
   const [detectedChar, setDetectedChar] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
   const [hasHand, setHasHand] = useState(false);
+  const [captureError, setCaptureError] = useState('');
+  const captureBlocked = useRef(false);
 
-  const frameBuffer = useRef<number[][]>([]);
+  const sampler = useRef<AlphabetSampler | null>(null);
+  const mountedRef = useRef(false);
+  const handPresent = useRef(false);
   const isPredicting = useRef(false);
-  const lastEventTime = useRef(0);
   const lastPredictionTime = useRef(0);
   const modelConfig = useRef<TfliteModelConfig | null>(null);
   const candidateLabel = useRef('');
   const candidateCount = useRef(0);
   const lastCommittedLabel = useRef('');
   const sequenceGeneration = useRef(0);
+  const handTracker = useRef(new AlphabetHandTracker());
+  const recentEvents = useRef<AlphabetFrame[]>([]);
+  const latestCapture = useRef<AlphabetCapture | null>(null);
 
 
-  useEffect(() => {
-    let mounted = true;
-    getTfliteModelConfig(TFLITE_MODES.alphabet)
-      .then((config) => {
-        if (mounted) modelConfig.current = config;
-      })
-      .catch((error: unknown) => {
-        const message = getErrorMessage(error);
-        console.error('Failed to load alphabet TFLite config:', error);
-        if (mounted) setStatusMsg(t('camera.modelError', { message }));
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [t]);
-
-  useEffect(() => {
-    const sub = eventEmitter.addListener('onHandLandmarksDetected', (event) => {
-      if (!event.landmarks || event.landmarks.length === 0) {
-        setHasHand(false);
-        setDetectedChar('');
-        setStatusMsg('');
-        frameBuffer.current = [];
-        candidateLabel.current = '';
-        candidateCount.current = 0;
-        lastCommittedLabel.current = '';
-        sequenceGeneration.current += 1;
-        return;
-      }
-
-      setHasHand(true);
-    });
-
-    return () => sub.remove();
-  }, []);
-
-  useEffect(() => {
-    const sub = eventEmitter.addListener('onHandFrame126', (event) => {
-      const now = Date.now();
-      if (now - lastEventTime.current < 50) return;
-      lastEventTime.current = now;
-
-      const config = modelConfig.current;
-      if (!config) return;
-
-      const frameVector = Array.from(event.frame ?? []) as number[];
-      if (frameVector.length !== config.featureDimension) return;
-
-      frameBuffer.current.push(frameVector);
-      if (frameBuffer.current.length > config.sequenceLength) frameBuffer.current.shift();
-
-      if (
-        frameBuffer.current.length === config.sequenceLength &&
-        !isPredicting.current &&
-        now - lastPredictionTime.current >= THROTTLE_MS
-      ) {
-        predictLocal(frameBuffer.current.slice(), sequenceGeneration.current);
-      }
-    });
-
-    return () => sub.remove();
-  }, []);
-
-  const predictLocal = async (frames: number[][], generation: number) => {
+  const predictLocal = useCallback(async (frames: number[][], generation: number, events: AlphabetFrame[]) => {
     if (isPredicting.current) return;
     isPredicting.current = true;
-    setIsProcessing(true);
 
     try {
       const data = await predictWithTfliteModel(frames, TFLITE_MODES.alphabet);
@@ -128,7 +71,11 @@ export default function AlphabetMode({ onResult, theme }: Props) {
 
       // Ignore a prediction that completed after the hand disappeared and the
       // active sequence was reset.
-      if (generation !== sequenceGeneration.current) return;
+      if (!mountedRef.current || !handPresent.current || generation !== sequenceGeneration.current) return;
+      latestCapture.current = {
+        schemaVersion: 1, pipelineVersion: 'alphabet-camera-v2',
+        capturedAt: new Date().toISOString(), frames, events, prediction: data,
+      };
 
       if (ALPHABET_LABELS.has(label) && confidence >= MIN_CONFIDENCE) {
         if (candidateLabel.current === label) {
@@ -136,6 +83,8 @@ export default function AlphabetMode({ onResult, theme }: Props) {
         } else {
           candidateLabel.current = label;
           candidateCount.current = 1;
+          setDetectedChar('');
+          setStatusMsg(t('camera.analyzing'));
         }
 
         if (candidateCount.current >= REQUIRED_STABLE_PREDICTIONS) {
@@ -148,6 +97,7 @@ export default function AlphabetMode({ onResult, theme }: Props) {
           }
         }
       } else {
+        setDetectedChar('');
         candidateLabel.current = '';
         candidateCount.current = 0;
         setStatusMsg(
@@ -163,18 +113,122 @@ export default function AlphabetMode({ onResult, theme }: Props) {
     } catch (error: unknown) {
       const message = getErrorMessage(error);
       console.error('Alphabet TFLite prediction failed:', error);
-      setStatusMsg(t('camera.modelError', { message }));
+      if (mountedRef.current && generation === sequenceGeneration.current) setStatusMsg(t('camera.modelError', { message }));
     } finally {
       lastPredictionTime.current = Date.now();
       isPredicting.current = false;
-      setIsProcessing(false);
     }
-  };
+  }, [onResult, t]);
+
+  useEffect(() => {
+    let mounted = true;
+    const tracker = handTracker.current;
+    mountedRef.current = true;
+    captureBlocked.current = false;
+    setCaptureError('');
+    getTfliteModelConfig(TFLITE_MODES.alphabet)
+      .then((config) => {
+        if (!mounted) return;
+        if (config.normalizationVersion !== 'alphabet_hands126_v1' || config.sampleFps !== 30) {
+          throw new Error('Alphabet model sampling/preprocessing contract mismatch');
+        }
+        modelConfig.current = config;
+        sampler.current = new AlphabetSampler(config.sequenceLength, config.featureDimension, config.sampleFps);
+        HandLandmarks.startAlphabetCapture();
+      })
+      .catch((error: unknown) => {
+        const message = getErrorMessage(error);
+        console.error('Failed to load alphabet TFLite config:', error);
+        if (mounted) setCaptureError(t('camera.modelError', { message }));
+      });
+
+    return () => {
+      mounted = false;
+      mountedRef.current = false;
+      sequenceGeneration.current += 1;
+      HandLandmarks.stopAlphabetCapture();
+      sampler.current = null;
+      modelConfig.current = null;
+      tracker.reset();
+      recentEvents.current = [];
+      latestCapture.current = null;
+    };
+  }, [t]);
+
+  useEffect(() => {
+    const sub = eventEmitter.addListener('onAlphabetFrame126', (payload: unknown) => {
+      const config = modelConfig.current;
+      const buffer = sampler.current;
+      if (!config || !buffer || captureBlocked.current) return;
+      const parsed = readAlphabetFrame(payload);
+      if (!parsed.frame) {
+        captureBlocked.current = true;
+        sequenceGeneration.current += 1;
+        handPresent.current = false;
+        latestCapture.current = null;
+        recentEvents.current = [];
+        handTracker.current.reset();
+        buffer.reset();
+        candidateLabel.current = '';
+        candidateCount.current = 0;
+        lastCommittedLabel.current = '';
+        setDetectedChar('');
+        setHasHand(false);
+        setCaptureError(parsed.error);
+        HandLandmarks.stopAlphabetCapture();
+        return;
+      }
+      const event = parsed.frame;
+      const now = Number(event.timestampMs);
+      if (!Number.isFinite(now) || (recentEvents.current.length && now <= recentEvents.current[recentEvents.current.length - 1].timestampMs)) return;
+      const frame = handTracker.current.encode(event.detections, now);
+      if (!frame) return;
+      recentEvents.current = [...recentEvents.current, event].slice(-150);
+      const previous = handPresent.current;
+      const sample = buffer.append(frame, now);
+      if (!sample.accepted) return;
+      handPresent.current = Number(event.handCount) > 0;
+      setHasHand(handPresent.current);
+      if (sample.restarted) {
+        sequenceGeneration.current += 1;
+        latestCapture.current = null;
+        candidateLabel.current = '';
+        candidateCount.current = 0;
+        setDetectedChar('');
+      }
+      if (!handPresent.current) {
+        setHasHand(false);
+        setDetectedChar('');
+        setStatusMsg('');
+        candidateLabel.current = '';
+        candidateCount.current = 0;
+        lastCommittedLabel.current = '';
+        latestCapture.current = null;
+        // Match Collector realtime: a new hand starts a fresh gesture window.
+        buffer.reset();
+        if (previous) sequenceGeneration.current += 1;
+        return;
+      }
+      const frames = buffer.snapshot();
+      if (
+        frames &&
+        !isPredicting.current &&
+        Date.now() - lastPredictionTime.current >= THROTTLE_MS
+      ) {
+        predictLocal(frames, sequenceGeneration.current, recentEvents.current.slice());
+      }
+    });
+
+    return () => sub.remove();
+  }, [predictLocal]);
+
 
   return (
     <View style={styles.container}>
       <View style={[styles.statusBox, !hasHand && styles.statusBoxWarning]}>
-        {!hasHand ? (
+        {captureError ? (
+          <Text style={styles.captureError}>{captureError}</Text>
+        ) : !hasHand ? (
           <Text style={styles.statusText}>{t('camera.noHand')}</Text>
         ) : (
           <View style={styles.resultContainer}>
@@ -192,6 +246,10 @@ export default function AlphabetMode({ onResult, theme }: Props) {
           </View>
         )}
       </View>
+      <AlphabetDiagnostics snapshot={() => {
+        const capture = latestCapture.current;
+        return handPresent.current && capture && Date.now() - Date.parse(capture.capturedAt) < 2000 ? capture : null;
+      }} />
     </View>
   );
 }
@@ -225,6 +283,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
   },
+  captureError: { color: '#fecaca', fontSize: 14, textAlign: 'center', maxWidth: '100%' },
   resultContainer: {
     flexDirection: 'row',
     alignItems: 'center',

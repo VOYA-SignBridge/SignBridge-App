@@ -19,6 +19,10 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Android build artifacts
+*.apk
+*.aab
+
 # Metro
 .metro-health-check*
 
@@ -42,4 +46,11 @@ app-example
 # Environment variable
 .env
 env
+
+# Local alphabet deployment tools and generated runtime caches
+VOYA-Collector/
+.alphabet-tools/
+scripts/alphabet/__pycache__/
+VOYA-Collector/**/__pycache__/
+
     

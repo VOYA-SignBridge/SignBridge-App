@@ -1,0 +1,399 @@
+{
+  "schema_version": "1.0",
+  "model_type": "HandGCN",
+  "model_config": {
+    "model": "HandGCN",
+    "input_dim": 126,
+    "output_dim": 30,
+    "num_nodes": 42,
+    "gcn_channels": 64,
+    "num_gcn_layers": 2,
+    "temporal_channels": 128,
+    "dropout": 0.3,
+    "max_distance": 2
+  },
+  "feature_dim": 126,
+  "seq_len": 60,
+  "num_classes": 30,
+  "idx_to_label": {
+    "0": {
+      "label_key": "vn/alphabet/a",
+      "label_slug": "a",
+      "label_original": "A",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "1": {
+      "label_key": "vn/alphabet/aa",
+      "label_slug": "aa",
+      "label_original": "Â",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "2": {
+      "label_key": "vn/alphabet/aw",
+      "label_slug": "aw",
+      "label_original": "Ă",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "3": {
+      "label_key": "vn/alphabet/b",
+      "label_slug": "b",
+      "label_original": "B",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "4": {
+      "label_key": "vn/alphabet/c",
+      "label_slug": "c",
+      "label_original": "C",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "5": {
+      "label_key": "vn/alphabet/d",
+      "label_slug": "d",
+      "label_original": "D",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "6": {
+      "label_key": "vn/alphabet/dd",
+      "label_slug": "dd",
+      "label_original": "Đ",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "7": {
+      "label_key": "vn/alphabet/e",
+      "label_slug": "e",
+      "label_original": "E",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "8": {
+      "label_key": "vn/alphabet/ee",
+      "label_slug": "ee",
+      "label_original": "Ê",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "9": {
+      "label_key": "vn/alphabet/g",
+      "label_slug": "g",
+      "label_original": "G",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "10": {
+      "label_key": "vn/alphabet/h",
+      "label_slug": "h",
+      "label_original": "H",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "11": {
+      "label_key": "vn/alphabet/i",
+      "label_slug": "i",
+      "label_original": "I",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "12": {
+      "label_key": "vn/alphabet/k",
+      "label_slug": "k",
+      "label_original": "K",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "13": {
+      "label_key": "vn/alphabet/l",
+      "label_slug": "l",
+      "label_original": "L",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "14": {
+      "label_key": "vn/alphabet/m",
+      "label_slug": "m",
+      "label_original": "M",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "15": {
+      "label_key": "vn/alphabet/n",
+      "label_slug": "n",
+      "label_original": "N",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "16": {
+      "label_key": "vn/alphabet/o",
+      "label_slug": "o",
+      "label_original": "O",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "17": {
+      "label_key": "vn/alphabet/oo",
+      "label_slug": "oo",
+      "label_original": "Ô",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "18": {
+      "label_key": "vn/alphabet/ow",
+      "label_slug": "ow",
+      "label_original": "Ơ",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "19": {
+      "label_key": "vn/alphabet/p",
+      "label_slug": "p",
+      "label_original": "P",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "20": {
+      "label_key": "vn/alphabet/q",
+      "label_slug": "q",
+      "label_original": "Q",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "21": {
+      "label_key": "vn/alphabet/r",
+      "label_slug": "r",
+      "label_original": "R",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "22": {
+      "label_key": "vn/alphabet/s",
+      "label_slug": "s",
+      "label_original": "S",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "23": {
+      "label_key": "vn/alphabet/t",
+      "label_slug": "t",
+      "label_original": "T",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "24": {
+      "label_key": "vn/alphabet/u",
+      "label_slug": "u",
+      "label_original": "U",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "25": {
+      "label_key": "vn/alphabet/uw",
+      "label_slug": "uw",
+      "label_original": "Ư",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "26": {
+      "label_key": "vn/alphabet/v",
+      "label_slug": "v",
+      "label_original": "V",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "27": {
+      "label_key": "vn/alphabet/x",
+      "label_slug": "x",
+      "label_original": "X",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "28": {
+      "label_key": "vn/alphabet/y",
+      "label_slug": "y",
+      "label_original": "Y",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    },
+    "29": {
+      "label_key": "vn/alphabet/z",
+      "label_slug": "z",
+      "label_original": "Z",
+      "language": "vn",
+      "dialect": "bang-chu-cai"
+    }
+  },
+  "label_to_idx": {
+    "vn/alphabet/a": 0,
+    "vn/alphabet/aa": 1,
+    "vn/alphabet/aw": 2,
+    "vn/alphabet/b": 3,
+    "vn/alphabet/c": 4,
+    "vn/alphabet/d": 5,
+    "vn/alphabet/dd": 6,
+    "vn/alphabet/e": 7,
+    "vn/alphabet/ee": 8,
+    "vn/alphabet/g": 9,
+    "vn/alphabet/h": 10,
+    "vn/alphabet/i": 11,
+    "vn/alphabet/k": 12,
+    "vn/alphabet/l": 13,
+    "vn/alphabet/m": 14,
+    "vn/alphabet/n": 15,
+    "vn/alphabet/o": 16,
+    "vn/alphabet/oo": 17,
+    "vn/alphabet/ow": 18,
+    "vn/alphabet/p": 19,
+    "vn/alphabet/q": 20,
+    "vn/alphabet/r": 21,
+    "vn/alphabet/s": 22,
+    "vn/alphabet/t": 23,
+    "vn/alphabet/u": 24,
+    "vn/alphabet/uw": 25,
+    "vn/alphabet/v": 26,
+    "vn/alphabet/x": 27,
+    "vn/alphabet/y": 28,
+    "vn/alphabet/z": 29
+  },
+  "normalization_version": "hands126_v1",
+  "feature_version": "v1",
+  "preprocess_contract": {
+    "landmark_order": "MP_Left(63)+MP_Right(63)",
+    "missing_hands": "zero_filled",
+    "coordinate_space": "mediapipe_normalized",
+    "coordinate_order": "xyz",
+    "frontend_mirroring": "visual_only",
+    "expects_strict_shape": [
+      60,
+      126
+    ]
+  },
+  "metrics": {
+    "test_acc": 0.9521276595744681,
+    "test_f1": 0.952186404337329,
+    "handedness": {
+      "left_only_acc": 0.9727891156462585,
+      "left_only_n": 147,
+      "right_only_acc": 0.9388646288209607,
+      "right_only_n": 229,
+      "both_acc": 0.0,
+      "both_n": 0
+    }
+  },
+  "created_at": "20260913_175720",
+  "vocabulary_schema_version": "v2",
+  "recognition_profile": "alphabet",
+  "include_common": false,
+  "unified": false,
+  "dataset_version": "unversioned",
+  "split_version": "alphabet_deploy_v23",
+  "preprocess_contract_version": "v2",
+  "storage_contract_version": "npz_v2",
+  "motion_types_present": [
+    "dynamic",
+    "static"
+  ],
+  "common_labels": [],
+  "profile_specific_labels": [
+    "vn/alphabet/a",
+    "vn/alphabet/aa",
+    "vn/alphabet/aw",
+    "vn/alphabet/b",
+    "vn/alphabet/c",
+    "vn/alphabet/d",
+    "vn/alphabet/dd",
+    "vn/alphabet/e",
+    "vn/alphabet/ee",
+    "vn/alphabet/g",
+    "vn/alphabet/h",
+    "vn/alphabet/i",
+    "vn/alphabet/k",
+    "vn/alphabet/l",
+    "vn/alphabet/m",
+    "vn/alphabet/n",
+    "vn/alphabet/o",
+    "vn/alphabet/oo",
+    "vn/alphabet/ow",
+    "vn/alphabet/p",
+    "vn/alphabet/q",
+    "vn/alphabet/r",
+    "vn/alphabet/s",
+    "vn/alphabet/t",
+    "vn/alphabet/u",
+    "vn/alphabet/uw",
+    "vn/alphabet/v",
+    "vn/alphabet/x",
+    "vn/alphabet/y",
+    "vn/alphabet/z"
+  ],
+  "seed": 42,
+  "run_purpose": "smoke_test",
+  "run_status": "completed",
+  "model_selection": {
+    "criterion": "val_macro_f1",
+    "restored_best_state": true,
+    "best_epoch": 67,
+    "best_val_f1": 0.9509806800821294,
+    "best_val_acc": 0.9521276595744681,
+    "early_stopping_patience": 10
+  },
+  "determinism": {
+    "seed": 42,
+    "mode": "strict",
+    "cudnn_deterministic": true,
+    "cublas_workspace_config": ":4096:8",
+    "deterministic_algorithms": true,
+    "warnings": []
+  },
+  "runtime_env": {
+    "python_version": "3.11.15",
+    "pytorch_version": "2.0.0+cu117",
+    "numpy_version": "1.26.2",
+    "cuda_version": "11.7",
+    "cudnn_version": 8500,
+    "device": "cuda",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41"
+  },
+  "git_commit": "5a58576e5565220d5d66224d0e24fe7e1d1d7f0e",
+  "training_config": {
+    "train_csv": "/workspace/processed/train_utils/outputs/unversioned/alphabet/alphabet_deploy_v23/hdgcn/seed_42/train.csv",
+    "val_csv": "/workspace/processed/train_utils/outputs/unversioned/alphabet/alphabet_deploy_v23/hdgcn/seed_42/val.csv",
+    "test_csv": "/workspace/processed/train_utils/outputs/unversioned/alphabet/alphabet_deploy_v23/hdgcn/seed_42/test.csv",
+    "batch_size": 32,
+    "epochs": 80,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "dropout": 0.3,
+    "channels": 64,
+    "levels": 3,
+    "kernel_size": 5,
+    "seed": 42,
+    "patience": 10,
+    "device": "cuda",
+    "num_workers": 0,
+    "out_dir": "/workspace/processed/train_utils/outputs/unversioned/alphabet/alphabet_deploy_v23/hdgcn/seed_42",
+    "model_type": "hdgcn",
+    "augmentation": {
+      "profile": "full",
+      "enabled": true,
+      "augmentation_contract_version": "v2_wrist_centered_mirror",
+      "p": 0.9,
+      "noise_std": 0.008,
+      "scale_range": [
+        0.97,
+        1.03
+      ],
+      "translation_std": 0.01,
+      "mirror_prob": 0.5,
+      "dropout_prob": 0.015,
+      "temporal_mask_prob": 0.0,
+      "temporal_jitter_prob": 0.25,
+      "max_temporal_shift": 2
+    }
+  },
+  "dataset_manifest_checksum": "9f893cdc8ad8649902dfe09afa0133331f9106b967435a3cee2b1cad086ca13f"
+}

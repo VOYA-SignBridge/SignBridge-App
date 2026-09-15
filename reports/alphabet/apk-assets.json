@@ -1,0 +1,9 @@
+{
+  "apkSha256": "4545f24b2d8cddd572c58cbe434b8b0a6e8ff318b631165ab7c0f4694aead440",
+  "modelId": "bigru_attention_alphabet_20260818_114440_verified_fp32",
+  "assets": {
+    "modelFile": "3f22ac371c3a8d947d0a0f7ae5fe5aa2e77b447361e8407c083a210b366f259c",
+    "labelsFile": "a349cd8414c432bdce8adc6bdaa850fec59229ec3bbddd35f12ee40b907733b3"
+  },
+  "matchesWorkspace": true
+}

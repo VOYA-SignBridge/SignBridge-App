@@ -1,0 +1,16 @@
+✔ 60 samples at 30 FPS span 1967ms, regardless of callback arrival time (2.2424ms)
+✔ slow callbacks preserve time with zero bins, never stretch the gesture (0.2896ms)
+✔ native millisecond truncation must not drop every third 30 FPS frame (0.4387ms)
+✔ empty detection is a real zero frame in the window (0.3296ms)
+✔ rejects duplicate/out-of-order/invalid timestamps and nonfinite features (0.1808ms)
+✔ keeps latest sample within a time bin and copies caller data (0.3315ms)
+✔ long interruption starts a fresh window; explicit reset handles mode changes (0.1183ms)
+✔ word model, registry and WordMode are unchanged from the initial workspace (2.2058ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 330.5104

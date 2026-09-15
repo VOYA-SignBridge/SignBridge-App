@@ -1,0 +1,61 @@
+Converting HandGCN directly to FP32 logits...
+(00:00) [START] LiteRT-Torch Convert
+(00:00) [START] LiteRT-Torch Convert > Torch Export: serving_default
+(00:00) [START] LiteRT-Torch Convert > Torch Export: serving_default > 
+ExportedProgram Run Decompositions
+/usr/lib/python3.13/copyreg.py:99: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+(00:01) [ DONE] LiteRT-Torch Convert > Torch Export: serving_default > 
+ExportedProgram Run Decompositions (+00:00)
+(00:01) [ DONE] LiteRT-Torch Convert > Torch Export: serving_default (+00:01)
+(00:01) [START] LiteRT-Torch Convert > Run FX Passes
+(00:01) [START] LiteRT-Torch Convert > Run FX Passes > ExportedProgram Run 
+Decompositions
+/usr/lib/python3.13/copyreg.py:99: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+(00:03) [ DONE] LiteRT-Torch Convert > Run FX Passes > ExportedProgram Run 
+Decompositions (+00:01)
+(00:03) [ DONE] LiteRT-Torch Convert > Run FX Passes (+00:01)
+(00:03) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default
+(00:03) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions
+/usr/lib/python3.13/copyreg.py:99: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+(00:04) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions (+00:01)
+(00:04) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions
+(00:04) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions (+00:00)
+(00:04) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default > Create 
+MLIR Module
+(00:06) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default > Create 
+MLIR Module (+00:01)
+(00:06) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default (+00:03)
+(00:06) [START] LiteRT-Torch Convert > Merge MLIR Modules
+(00:06) [ DONE] LiteRT-Torch Convert > Merge MLIR Modules (+00:00)
+(00:06) [START] LiteRT-Torch Convert > Run LiteRT Converter Passes
+(00:06) [ DONE] LiteRT-Torch Convert > Run LiteRT Converter Passes (+00:00)
+(00:06) [ DONE] LiteRT-Torch Convert (+00:06)
+(00:00) [START] Write Model to Bytes
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1789360255.523400   14668 flatbuffer_export.cc:4342] Estimated count of arithmetic ops: 154.995 M  ops, equivalently 77.498 M  MACs
+(00:00) [ DONE] Write Model to Bytes (+00:00)
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+ERROR: Subgraph reshaping is enabled by default, TFLITE_XNNPACK_DELEGATE_FLAG_ENABLE_SUBGRAPH_RESHAPING is deprecated and will be removed in the future.
+{
+  "pythonParityPassed": true,
+  "serializedTfliteParity": {
+    "sampleCount": 64,
+    "argmaxAgreement": 1.0,
+    "maxAbsoluteError": 9.5367431640625e-06,
+    "meanAbsoluteError": 1.053915669520696e-06,
+    "maxRelativeError": 6.869587746225653e-06,
+    "meanRelativeError": 3.3479293737755213e-07,
+    "atol": 0.0001,
+    "rtol": 0.0001,
+    "allclose": true,
+    "changedArgmax": []
+  },
+  "accuracy": null
+}

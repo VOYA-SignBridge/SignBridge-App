@@ -1,0 +1,44 @@
+{
+  "sourceFile": "C:\\Users\\LENOVO\\Downloads\\model_bigru.tflite",
+  "modelId": "model_bigru_dc868da1",
+  "modelSha256": "dc868da1644295ff10976f3eeee0681be13e6168f7da228611126312c0a50638",
+  "sizeBytes": 891948,
+  "labelsSha256": "2c5e2ecea0f0a66fac11d2032e8c75ea5e5750f249cb9aee4b04083f1969b493",
+  "tensorContract": {
+    "signatures": {},
+    "input": {
+      "name": "inputs_0",
+      "shape": [
+        1,
+        60,
+        126
+      ],
+      "dtype": "float32"
+    },
+    "output": {
+      "name": "Identity",
+      "shape": [
+        1,
+        30
+      ],
+      "dtype": "float32"
+    },
+    "outputType": "probabilities"
+  },
+  "distributionChecks": {
+    "finite": true,
+    "min": 1.0136677087990709e-11,
+    "max": 0.9973727464675903,
+    "maxProbabilitySumError": 2.384185791015625e-07
+  },
+  "knownBigruCheckpointComparison": {
+    "fixtureCount": 64,
+    "argmaxAgreement": 0.390625,
+    "changedArgmaxCount": 39,
+    "maxAbsoluteProbabilityError": 0.8883896470069885,
+    "meanAbsoluteProbabilityError": 0.03803235664963722
+  },
+  "activated": true,
+  "alphabetMode": "model_bigru_dc868da1",
+  "wordMode": "tcn_dialect-hoa-de_20260721_160609"
+}

@@ -1,0 +1,52 @@
+{
+  "modelId": "bigru_attention_alphabet_20260914_092530_executorch_1dca17c6",
+  "pteSha256": "1dca17c68fbc3fb5e00a136590b0090d189ad8544a9af60b4503bddfa4eb6f16",
+  "metadataSha256": "eb154c5d340e5badd3ba70df3051517b7b7cf4e6752300d17ceb0d558ea2a4f0",
+  "checkpointSha256": "cd39e37c53b6726b2bd5511b5925148b4d1a778b56d2bc0542521d384cbc538d",
+  "labelsSha256": "2c5e2ecea0f0a66fac11d2032e8c75ea5e5750f249cb9aee4b04083f1969b493",
+  "modelBytes": 1642500,
+  "runtime": "ExecuTorch 1.4.0",
+  "input": [
+    1,
+    60,
+    126
+  ],
+  "output": [
+    1,
+    30
+  ],
+  "outputType": "logits",
+  "checkpointMetrics": {
+    "test_acc": 0.9654255319148937,
+    "test_f1": 0.9656328561401024,
+    "handedness": {
+      "left_only_acc": 0.9455782312925171,
+      "left_only_n": 147,
+      "right_only_acc": 0.9781659388646288,
+      "right_only_n": 229,
+      "both_acc": 0.0,
+      "both_n": 0
+    }
+  },
+  "parity": {
+    "torchVersion": "2.13.0+cpu",
+    "samples": 64,
+    "argmaxAgreement": 1.0,
+    "changedArgmax": [],
+    "maxAbsoluteError": 5.7220458984375e-06,
+    "meanAbsoluteError": 8.675424965076672e-07,
+    "maxRelativeError": 0.0011493861675262451,
+    "allclose": true,
+    "pteZeroArgmax": 10
+  },
+  "alphabetMode": "bigru_attention_alphabet_20260914_092530_executorch_1dca17c6",
+  "wordMode": "tcn_dialect-hoa-de_20260721_160609",
+  "activated": true,
+  "verification": {
+    "gradleCompile": "PASS (:app:compileDebugKotlin, :app:compileDebugAndroidTestKotlin)",
+    "samplingTests": "PASS (8/8)",
+    "apkAssembled": false,
+    "instrumentationRun": false,
+    "instrumentationReason": "Saved AVD is 32-bit x86; ExecuTorch Android 1.4.0 packages arm64-v8a and x86_64."
+  }
+}

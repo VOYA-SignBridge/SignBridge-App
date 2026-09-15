@@ -1,0 +1,68 @@
+Checkpoint loaded with strict=True; BiGRU hidden=64, layers=2; 30 labels verified.
+Prepared 64 structured landmark sequences.
+torch.export.export passed; comparing exported program.
+Starting litert_torch.convert on CPU in FP32...
+(00:00) [START] LiteRT-Torch Convert
+(00:00) [START] LiteRT-Torch Convert > Torch Export: serving_default
+/usr/lib/python3.13/contextlib.py:148: UserWarning: The tensor attributes self.gru._flat_weights[0], self.gru._flat_weights[1], self.gru._flat_weights[2], self.gru._flat_weights[3], self.gru._flat_weights[4], self.gru._flat_weights[5], self.gru._flat_weights[6], self.gru._flat_weights[7], self.gru._flat_weights[8], self.gru._flat_weights[9], self.gru._flat_weights[10], self.gru._flat_weights[11], self.gru._flat_weights[12], self.gru._flat_weights[13], self.gru._flat_weights[14], self.gru._flat_weights[15] were assigned during export. Such attributes must be registered as buffers using the `register_buffer` API (https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.register_buffer).
+  next(self.gen)
+(00:01) [START] LiteRT-Torch Convert > Torch Export: serving_default > 
+ExportedProgram Run Decompositions
+/usr/lib/python3.13/copyreg.py:99: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+(00:13) [ DONE] LiteRT-Torch Convert > Torch Export: serving_default > 
+ExportedProgram Run Decompositions (+00:11)
+(00:13) [ DONE] LiteRT-Torch Convert > Torch Export: serving_default (+00:13)
+(00:13) [START] LiteRT-Torch Convert > Run FX Passes
+(00:14) [START] LiteRT-Torch Convert > Run FX Passes > ExportedProgram Run 
+Decompositions
+(00:14) [ DONE] LiteRT-Torch Convert > Run FX Passes > ExportedProgram Run 
+Decompositions (+00:00)
+(00:14) [ DONE] LiteRT-Torch Convert > Run FX Passes (+00:01)
+(00:14) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default
+(00:14) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions
+/usr/lib/python3.13/copyreg.py:99: FutureWarning: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+  return cls.__new__(cls, *args)
+(00:34) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions (+00:20)
+(00:34) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions
+(00:34) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default > 
+ExportedProgram Run Decompositions (+00:00)
+(00:34) [START] LiteRT-Torch Convert > Lower to MLIR: serving_default > Create 
+MLIR Module
+(01:02) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default > Create 
+MLIR Module (+00:27)
+(01:02) [ DONE] LiteRT-Torch Convert > Lower to MLIR: serving_default (+00:47)
+(01:02) [START] LiteRT-Torch Convert > Merge MLIR Modules
+(01:02) [ DONE] LiteRT-Torch Convert > Merge MLIR Modules (+00:00)
+(01:02) [START] LiteRT-Torch Convert > Run LiteRT Converter Passes
+(01:05) [ DONE] LiteRT-Torch Convert > Run LiteRT Converter Passes (+00:03)
+(01:05) [ DONE] LiteRT-Torch Convert (+01:05)
+Conversion finished; checking in-memory outputs before serialization.
+(00:00) [START] Write Model to Bytes
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1789299793.178200    7054 flatbuffer_export.cc:4342] Estimated count of arithmetic ops: 27.749 M  ops, equivalently 13.875 M  MACs
+(00:00) [ DONE] Write Model to Bytes (+00:00)
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+ERROR: Subgraph reshaping is enabled by default, TFLITE_XNNPACK_DELEGATE_FLAG_ENABLE_SUBGRAPH_RESHAPING is deprecated and will be removed in the future.
+Serialized bigru_attention_alphabet_20260818_114440_verified_fp32.tflite; reloading in LiteRT for parity.
+{
+  "pythonParityPassed": true,
+  "serializedTfliteParity": {
+    "sampleCount": 64,
+    "argmaxAgreement": 1.0,
+    "maxAbsoluteError": 4.76837158203125e-06,
+    "meanAbsoluteError": 5.469563499597522e-07,
+    "maxRelativeError": 0.00030221524956927447,
+    "meanRelativeError": 8.764623610688074e-07,
+    "relativeDenominatorFloor": 1e-06,
+    "atol": 0.0001,
+    "rtol": 0.0001,
+    "allclose": true,
+    "changedArgmax": []
+  },
+  "accuracy": null,
+  "newConversionExecuted": true
+}

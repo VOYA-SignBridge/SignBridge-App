@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.pytorch.executorch" >
+
+    <uses-sdk android:minSdkVersion="23" />
+
+    <instrumentation
+        android:name="androidx.test.runner.AndroidJUnitRunner"
+        android:label="Tests for ExecuTorch Modules"
+        android:targetPackage="org.pytorch.executorch" />
+
+    <application>
+    </application>
+
+</manifest>

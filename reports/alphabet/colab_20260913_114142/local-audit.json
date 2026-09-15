@@ -1,0 +1,65 @@
+{
+  "zipSha256": "319e1a3f4dbfbd918077bb31ed3cff80ed66010db813e3b61056b89c7a26459f",
+  "modelSha256": "524c028ac9861d5c1d82bcedd2e1f92dc45f342ef97e775409fcaf393075d13c",
+  "checkpointSha256": "0f6626b2857827645c7139e4870d02cfd905e5fcf9c3b4d879d266415f0237eb",
+  "versions": {
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "torch": "2.8.0+cpu",
+    "numpy": "2.1.3",
+    "litert-torch": null,
+    "litert-converter": null,
+    "torchao": null,
+    "ai-edge-litert": "2.1.4",
+    "tensorflow": null
+  },
+  "checks": {
+    "localTfliteVsLocalPytorch": {
+      "sampleCount": 64,
+      "argmaxAgreement": 1.0,
+      "maxAbsoluteError": 2.384185791015625e-06,
+      "meanAbsoluteError": 3.8477204119165737e-07,
+      "maxRelativeError": 0.00010649667768400153,
+      "meanRelativeError": 4.564956762703131e-07,
+      "relativeDenominatorFloor": 1e-06,
+      "atol": 0.0001,
+      "rtol": 0.0001,
+      "allclose": true,
+      "changedArgmax": []
+    },
+    "localTfliteVsColabPytorch": {
+      "sampleCount": 64,
+      "argmaxAgreement": 1.0,
+      "maxAbsoluteError": 2.384185791015625e-06,
+      "meanAbsoluteError": 3.799834909538428e-07,
+      "maxRelativeError": 0.00017606298024321843,
+      "meanRelativeError": 6.126927282973701e-07,
+      "relativeDenominatorFloor": 1e-06,
+      "atol": 0.0001,
+      "rtol": 0.0001,
+      "allclose": true,
+      "changedArgmax": []
+    },
+    "localTfliteVsColabTflite": {
+      "sampleCount": 64,
+      "argmaxAgreement": 1.0,
+      "maxAbsoluteError": 3.814697265625e-06,
+      "meanAbsoluteError": 5.369844075175933e-07,
+      "maxRelativeError": 0.00014763136707272604,
+      "meanRelativeError": 8.07238709135236e-07,
+      "relativeDenominatorFloor": 1e-06,
+      "atol": 0.0001,
+      "rtol": 0.0001,
+      "allclose": true,
+      "changedArgmax": []
+    }
+  },
+  "floatTensorsAreFp32": true,
+  "quantizedTensorCount": 0,
+  "labelsVerified": 30,
+  "tensorCount": 4690,
+  "activated": true,
+  "modelId": "bigru_attention_alphabet_20260818_114440_colab_524c028a_fp32",
+  "modelFile": "bigru_attention_alphabet_20260818_114440_colab_524c028a_fp32.tflite",
+  "labelsFile": "bigru_attention_alphabet_20260818_114440_colab_524c028a_labels.json"
+}

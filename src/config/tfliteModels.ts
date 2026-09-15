@@ -16,7 +16,8 @@ export type TfliteModelConfig = {
   featureDimension: number;
   classCount: number;
   mirrorInput: boolean;
-  normalizationVersion: 'hands126_v1';
+  normalizationVersion: 'hands126_v1' | 'alphabet_hands126_v1';
+  sampleFps?: number;
 };
 
 const configCache = new Map<string, TfliteModelConfig>();

@@ -1,0 +1,26 @@
+{
+  "zipSha256": "f65e935468d4d81f551c3f04c00167d8e11a3489479d7ab2c403eddbc489a443",
+  "modelId": "handgcn_alphabet_20260913_175720_colab_f780742c_fp32",
+  "modelSha256": "f780742c8da0538ad89e0e3c4a67f0c6d6e069f224a41d8c812375f598f302a2",
+  "labelsSha256": "2c5e2ecea0f0a66fac11d2032e8c75ea5e5750f249cb9aee4b04083f1969b493",
+  "checkpointSha256": "b891cb0d157de813ce0376eceb0935dc6cc3557f31c6fd513bfdfc3449726318",
+  "fixtureCount": 64,
+  "serializedTfliteParity": {
+    "sampleCount": 64,
+    "argmaxAgreement": 1.0,
+    "maxAbsoluteError": 9.5367431640625e-06,
+    "meanAbsoluteError": 1.053915669520696e-06,
+    "maxRelativeError": 6.869587746225653e-06,
+    "meanRelativeError": 3.3479293737755213e-07,
+    "atol": 0.0001,
+    "rtol": 0.0001,
+    "allclose": true,
+    "changedArgmax": []
+  },
+  "activated": true,
+  "modelFile": "handgcn_alphabet_20260913_175720_colab_f780742c_fp32.tflite",
+  "labelsFile": "handgcn_alphabet_20260913_175720_colab_f780742c_labels.json",
+  "alphabetMode": "handgcn_alphabet_20260913_175720_colab_f780742c_fp32",
+  "wordMode": "tcn_dialect-hoa-de_20260721_160609",
+  "androidRawSha256": "73172a786ba636f4a919c94430c6c95f975da43589f0a13526306a31c6c84995"
+}

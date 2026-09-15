@@ -1,0 +1,4 @@
+{
+  "src/utils/alphabetSampling.ts": true,
+  "src/components/translation/AlphabetMode.tsx": true
+}

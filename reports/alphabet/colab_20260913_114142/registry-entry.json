@@ -1,0 +1,23 @@
+{
+  "displayName": "BiGRU Attention Alphabet FP32 (verified)",
+  "modelFile": "bigru_attention_alphabet_20260818_114440_verified_fp32.tflite",
+  "labelsFile": "bigru_attention_alphabet_20260818_114440_verified_labels.json",
+  "sequenceLength": 60,
+  "featureDimension": 126,
+  "classCount": 30,
+  "signatureKey": "serving_default",
+  "frameInputName": "args_0",
+  "lengthInputName": "",
+  "outputName": "output_0",
+  "inputTensorName": "serving_default_args_0",
+  "outputTensorName": "serving_default_output_0_output",
+  "applySoftmax": true,
+  "mirrorInput": false,
+  "swapHandedness": true,
+  "normalizationVersion": "alphabet_hands126_v1",
+  "sampleFps": 30,
+  "numThreads": 4,
+  "modelSha256": "524c028ac9861d5c1d82bcedd2e1f92dc45f342ef97e775409fcaf393075d13c",
+  "labelsSha256": "2c5e2ecea0f0a66fac11d2032e8c75ea5e5750f249cb9aee4b04083f1969b493",
+  "outputType": "logits"
+}

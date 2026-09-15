@@ -1,0 +1,85 @@
+{
+  "captureCount": 1,
+  "modelSha256": "524c028ac9861d5c1d82bcedd2e1f92dc45f342ef97e775409fcaf393075d13c",
+  "pytorchAccuracyOnSubmittedClips": 1.0,
+  "androidAccuracyOnSubmittedClips": 1.0,
+  "limitation": "Selected user-labelled error clips, not an independent validation set. Transform experiments do not authorize changing serving orientation.",
+  "clips": [
+    {
+      "capturedAt": "synthetic-smoke-test",
+      "expected": "G",
+      "pytorch": "G",
+      "android": "G",
+      "pytorchCorrect": true,
+      "androidCorrect": true,
+      "pytorchVsTflite": {
+        "sampleCount": 1,
+        "argmaxAgreement": 1.0,
+        "maxAbsoluteError": 1.3113021850585938e-06,
+        "meanAbsoluteError": 4.798173904418946e-07,
+        "maxRelativeError": 2.5134341089502994e-06,
+        "meanRelativeError": 3.1237985115967125e-07,
+        "relativeDenominatorFloor": 1e-06,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "allclose": true,
+        "changedArgmax": []
+      },
+      "pytorchVsAndroid": {
+        "sampleCount": 1,
+        "argmaxAgreement": 1.0,
+        "maxAbsoluteError": 2.86102294921875e-06,
+        "meanAbsoluteError": 7.207194964090983e-07,
+        "maxRelativeError": 5.105413033805296e-06,
+        "meanRelativeError": 4.653435690735557e-07,
+        "relativeDenominatorFloor": 1e-06,
+        "atol": 0.0001,
+        "rtol": 0.0001,
+        "allclose": true,
+        "changedArgmax": []
+      },
+      "top5": [
+        {
+          "label": "G",
+          "probability": 0.9576684832572937
+        },
+        {
+          "label": "Â",
+          "probability": 0.017881274223327637
+        },
+        {
+          "label": "P",
+          "probability": 0.00845164805650711
+        },
+        {
+          "label": "T",
+          "probability": 0.005806544795632362
+        },
+        {
+          "label": "D",
+          "probability": 0.0035027831327170134
+        }
+      ],
+      "emptyFramesInModelWindow": 0,
+      "detectorFps": 29.999999999999996,
+      "maxCallbackGapMs": 33.333333333333485,
+      "imageSizes": [
+        "480x640"
+      ],
+      "orientationExperiments": {
+        "swap=False,mirror=False": {
+          "predicted": "G",
+          "correct": true
+        },
+        "swap=False,mirror=True": {
+          "predicted": "G",
+          "correct": true
+        },
+        "swap=True,mirror=True": {
+          "predicted": "G",
+          "correct": true
+        }
+      }
+    }
+  ]
+}

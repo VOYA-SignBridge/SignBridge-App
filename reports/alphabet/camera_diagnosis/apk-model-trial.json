@@ -1,0 +1,36 @@
+{
+  "apk": "reports\\alphabet\\camera_diagnosis\\alphabet-model-trial-arm.apk",
+  "apkSha256": "6ab52e3f568cb16f875c89be2554bad74329376ea74c013e8dad14cd1d8b628e",
+  "apkBytes": 128842785,
+  "abis": [
+    "arm64-v8a",
+    "armeabi-v7a"
+  ],
+  "modelId": "model",
+  "modelSha256": "910de8cf5d73a244e1fbc1b791230cf21b484189c9ee0568a8806140ca716cd0",
+  "labelsSha256": "2c5e2ecea0f0a66fac11d2032e8c75ea5e5750f249cb9aee4b04083f1969b493",
+  "wordModelId": "tcn_dialect-hoa-de_20260721_160609",
+  "allAssetsMatchWorkspace": true,
+  "assets": {
+    "tcn_20260624_232642.tflite": "1110ffac856066fd3476faa97966b94f66f8f52a71ed4344c7d4c9b0ca79f6af",
+    "tcn_20260624_232642_display_labels.json": "d748c88de77c633dd8980ff8fe33875ba597f7a7480bd8202ce4c2948bec5426",
+    "tcn_20260721_115258.tflite": "f16ea772e228af5fad2b8a114cd8fd2743e4e91690a150a1a8b44856ff34a053",
+    "tcn_20260721_115258_display_labels.json": "6f065f8e89f5c94040d0db8b34213f6e07bff487f9c9b23225ce2f4eb1cfff7e",
+    "tcn_20260814_104243.tflite": "334c91bba531e50a53d40cd1333ea00881d5df511d344cbc91a503233c1da9d4",
+    "tcn_20260814_104243_display_labels.json": "c1da29e97e92054ef2411fb5fcae1aeee7a4bed0f7afeafa74d96bd7b31ef4de",
+    "tcn_dialect-hoa-de_20260721_160609.tflite": "fee3765327efa89bb735e1a029f53d7e8f1f6d4808f65e434638376129e9b4f8",
+    "tcn_dialect-hoa-de_20260721_160609_display_labels.json": "a03c9f54d6135ddcd6a5f1a0d8acc2ea7b34fa9968d3352c96b3a19382e9292f",
+    "tcn_alphabet_20260912_121104.tflite": "4105f4465eb050ea54aef4f2cd2e68b74e19632cc58e466747f6b51b98a54a62",
+    "tcn_alphabet_20260912_121104_display_labels.json": "a13c22b2f09812bdf65912b507ac4e0f8ba02ce8f7eef9e91214c35b09d0f83f",
+    "bigru_attention_alphabet_20260818_114440.tflite": "3f22ac371c3a8d947d0a0f7ae5fe5aa2e77b447361e8407c083a210b366f259c",
+    "bigru_attention_alphabet_20260818_114440_display_labels.json": "8b6e07053d76a527c555eb8389263e0fbef1d0980ef78142fda836bd3f1496d0",
+    "bigru_attention_alphabet_20260818_114440_fp32.tflite": "3f22ac371c3a8d947d0a0f7ae5fe5aa2e77b447361e8407c083a210b366f259c",
+    "bigru_attention_alphabet_20260818_114440_verified_fp32.tflite": "3f22ac371c3a8d947d0a0f7ae5fe5aa2e77b447361e8407c083a210b366f259c",
+    "bigru_attention_alphabet_20260818_114440_verified_labels.json": "a349cd8414c432bdce8adc6bdaa850fec59229ec3bbddd35f12ee40b907733b3",
+    "bigru_attention_alphabet_20260818_114440_colab_524c028a_fp32.tflite": "524c028ac9861d5c1d82bcedd2e1f92dc45f342ef97e775409fcaf393075d13c",
+    "bigru_attention_alphabet_20260818_114440_colab_524c028a_labels.json": "2c5e2ecea0f0a66fac11d2032e8c75ea5e5750f249cb9aee4b04083f1969b493",
+    "model.tflite": "910de8cf5d73a244e1fbc1b791230cf21b484189c9ee0568a8806140ca716cd0",
+    "model.json": "2c5e2ecea0f0a66fac11d2032e8c75ea5e5750f249cb9aee4b04083f1969b493"
+  },
+  "bundledJavaScript": true
+}

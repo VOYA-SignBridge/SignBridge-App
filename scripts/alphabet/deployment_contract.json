@@ -1,0 +1,25 @@
+{
+  "checkpointSha256": "0f6626b2857827645c7139e4870d02cfd905e5fcf9c3b4d879d266415f0237eb",
+  "modelConfig": {"hidden_size": 64, "num_layers": 2, "dropout": 0.3},
+  "configEvidence": {
+    "reason": "Legacy train_tcn.build_checkpoint writes TCN fields even for BiGRU. Do not interpret levels=3 as GRU layers.",
+    "hidden_size": "gru.weight_hh_l0 shape [192,64]: 3 gates, H=64",
+    "num_layers": "Only l0/l1 and both reverse directions exist in model_state_dict",
+    "dropout": "checkpoint.model_config.dropout and training_config.dropout are both 0.3",
+    "source": "VOYA-Collector/processed/train_utils/models/bigru_attention.py"
+  },
+  "sampleFps": 30,
+  "sampleFpsEvidence": "VOYA-Collector/frontend/src/config/capture.ts: SAMPLE_FPS=30, TARGET_FRAMES=60; historical capture timestamps not available",
+  "swapHandedness": true,
+  "mirrorInput": false,
+  "orientationEvidence": [
+    "VOYA-Collector/frontend/src/utils/realtimeFlatten.ts: toDetections swaps raw MP labels once",
+    "VOYA-Collector/frontend/src/config/handTracking.ts: MIRROR_SERVING_PAYLOAD=false",
+    "VOYA-Collector/backend/realtime_service/app/contracts.py: swapped_mp_handedness_slots"
+  ],
+  "normalizationVersion": "alphabet_hands126_v1",
+  "normalization": "Swap raw MP hand blocks once; XY subtract each wrist, divide by max span of non-wrist valid XY points; keep Z unchanged. No rounding. Missing landmarks remain zero; missing wrist invalidates that hand.",
+  "missingFramePolicy": "Sampler uses timestamp bins at 30 FPS and zero-fills unobserved callback bins, with no carry-forward. Alphabet camera v2 resets the window on explicit empty detection, matching Collector realtime. Restart after a gap longer than one window. Never predict on an empty current detection.",
+  "cameraIdentityPolicy": "Alphabet camera v2 ports Collector handIdentity.ts, preserves detections even when MP labels collide, resolves anatomical slots, then encodes MP slots for the existing single native swap. Word extraction is unchanged.",
+  "limitation": "Training sources contain differing capture/video missing-frame and mirror policies. This pins the serving contract; empirical accuracy/orientation still needs the checkpoint's validation/test data."
+}

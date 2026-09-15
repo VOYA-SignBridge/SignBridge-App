@@ -1,0 +1,74 @@
+{
+  "modelId": "voya_tcn_alphabet_30class_fp32_executorch_d7a6bee0",
+  "modelSha256": "d7a6bee0b62477a1602ed2b24529e2e873d01463c8acb95c0a77cd6179caea12",
+  "modelBytes": 546424,
+  "runtime": "ExecuTorch 1.4.0",
+  "methods": [
+    "forward"
+  ],
+  "input": {
+    "dtype": "float32",
+    "shape": [
+      1,
+      60,
+      126
+    ]
+  },
+  "output": {
+    "dtype": "float32",
+    "shape": [
+      1,
+      30
+    ],
+    "type": "logits"
+  },
+  "fixtureSmoke": {
+    "samples": 64,
+    "allFinite": true,
+    "min": -43.28522872924805,
+    "max": 37.27712631225586,
+    "argmaxHistogram": {
+      "0": 10,
+      "5": 9,
+      "6": 7,
+      "8": 4,
+      "11": 5,
+      "18": 3,
+      "22": 8,
+      "25": 17,
+      "28": 1
+    }
+  },
+  "oldTcnTfliteComparison": {
+    "argmaxAgreement": "5/64",
+    "maxAbsoluteDifference": 36.082237243652344,
+    "sameModel": false
+  },
+  "labels": {
+    "source": "tcn_alphabet_20260912_121104_display_labels.json",
+    "status": "assumed; PTE contains no label metadata"
+  },
+  "preprocessing": {
+    "version": "alphabet_hands126_v1",
+    "status": "assumed; PTE contains no preprocessing metadata"
+  },
+  "metadataSidecar": "missing",
+  "sourceCheckpoint": "missing",
+  "activeOn": [
+    "x86_64",
+    "arm64-v8a"
+  ],
+  "x86Fallback": "model_bigru",
+  "wordMode": "tcn_dialect-hoa-de_20260721_160609",
+  "verification": {
+    "desktopExecuTorchFixtureSmoke": "PASS (64/64 finite outputs)",
+    "gradleCompileX86_64": "PASS",
+    "androidInstrumentationX86_64": "PASS (7/7)",
+    "mediaPipeHandLandmarkerX86_64": "PASS",
+    "mediaPipeVersion": "0.10.35",
+    "cameraCrashCause": "MediaPipe tasks-vision 0.10.14 did not package an x86_64 JNI library",
+    "samplingTests": "PASS (8/8)",
+    "debugApkBuiltForInstrumentation": true,
+    "releaseApkBuilt": false
+  }
+}

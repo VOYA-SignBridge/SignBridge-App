@@ -1,0 +1,6 @@
+{
+  "src/components/translation/AlphabetMode.tsx": true,
+  "src/components/translation/AlphabetDiagnostics.tsx": true,
+  "src/utils/alphabetCamera.ts": true,
+  "src/utils/alphabetHandIdentity.ts": true
+}
