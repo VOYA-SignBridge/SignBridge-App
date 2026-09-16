@@ -5,12 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9372498b-0389-4af9-ab5c-818dd8495d7c" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/db/supabase.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/db/supabase.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/index.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/config.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/i18n/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/i18n/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/app/src/main/assets/bigru_attention_alphabet_20260818_114440_colab_524c028a_labels.json" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/src/main/assets/bigru_attention_alphabet_20260818_114440_colab_524c028a_labels.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/app/src/main/assets/bigru_attention_alphabet_20260914_092530_executorch_1dca17c6_labels.json" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/src/main/assets/bigru_attention_alphabet_20260914_092530_executorch_1dca17c6_labels.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/app/src/main/assets/handgcn_alphabet_20260913_175720_colab_f780742c_labels.json" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/src/main/assets/handgcn_alphabet_20260913_175720_colab_f780742c_labels.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/app/src/main/assets/model.json" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/src/main/assets/model.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/app/src/main/assets/model_bigru_dc868da1_labels.json" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/src/main/assets/model_bigru_dc868da1_labels.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/android/gradle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/alphabet/verify_apk.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/alphabet/verify_apk.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,7 +55,7 @@
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "local__model__v1.1.0",
     "last_opened_file_path": "E:/CTU-SIGNBRIDGE/SignBridge_ReactNative"
   }
 }]]></component>

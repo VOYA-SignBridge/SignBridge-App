@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "SignBridge",
+    "name": "CTU.SignBridge",
     "slug": "signbridge",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/CTU_logo.png",
     "scheme": "signbridge",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -21,8 +21,8 @@
     "android": {
       "package": "com.nmnghi.VOYA_App",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundImage": "./assets/images/adaptive-background.png"
+        "foregroundImage": "./assets/images/ctu-icon-foreground.png",
+        "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "resize",
@@ -41,12 +41,12 @@
       [
   "expo-splash-screen",
   {
-    "image": "./assets/images/adaptive-icon.png",
+    "image": "./assets/images/CTU_logo.png",
     "imageWidth": 120,
     "resizeMode": "contain",
     "backgroundColor": "#0098E8",
     "dark": {
-      "image": "./assets/images/adaptive-icon.png",
+      "image": "./assets/images/CTU_logo.png",
       "backgroundColor": "#0098E8"
     }
   }

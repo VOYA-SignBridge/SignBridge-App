@@ -2,7 +2,7 @@
   "tabs": {
     "translate": "Phiên dịch",
     "chat": "Trò chuyện",
-    "dictionary": "Từ điển",
+    "dictionary": "Thư viện",
     "settings": "Cài đặt"
   },
   "auth": {
@@ -65,6 +65,8 @@
     "greetingSubtitle": "Nhập văn bản để tôi dịch sang\nngôn ngữ ký hiệu nhé.",
     "clear": "Xóa",
     "buildingSentence": "Đang ghép câu hoàn chỉnh...",
+    "autoBuildSentence": "Tự ghép câu",
+    "sentenceBuildingDisabled": "Tự ghép câu đang tắt. Bạn vẫn có thể nhận diện ký hiệu và sửa câu thủ công.",
     "sentenceBuildError": "Không thể tạo câu hoàn chỉnh. Vui lòng kiểm tra dịch vụ LLM rồi thử lại.",
     "retrySentence": "Thử lại",
     "editRecognizedSignsHelper": "Chạm để chỉnh sửa · Thêm ký hiệu bằng dấu phẩy hoặc xuống dòng",
@@ -73,6 +75,7 @@
     "cancelRecognizedSigns": "Hủy",
     "recognizedSignsEditorTitle": "Chỉnh sửa ký hiệu nhận diện",
     "recognizedSignsEditorDescription": "Nhập các ký hiệu bằng tiếng Việt, phân tách bằng dấu phẩy hoặc xuống dòng. Câu hoàn chỉnh sẽ được tạo lại sau khi xác nhận.",
+    "recognizedSignsEditorDescriptionWithoutBuild": "Nhập các ký hiệu bằng tiếng Việt, phân tách bằng dấu phẩy hoặc xuống dòng. Tự ghép câu đang tắt nên xác nhận chỉ cập nhật ký hiệu.",
     "editSentenceHint": "Có thể chỉnh sửa nội dung câu hoàn chỉnh",
     "quickPronouns": "Xưng hô",
     "defaultPronouns": "Mặc định: {{pair}}",
@@ -81,6 +84,29 @@
     "noAutomaticSubjectShort": "Không tự thêm",
     "noData": "Chưa có dữ liệu",
     "noDataMsg": "Từ \"{{word}}\" hiện chưa có trong từ điển của SignBridge."
+  },
+  "library": {
+    "title": "Thư viện",
+    "vocabulary": "Từ vựng",
+    "alphabet": "Chữ cái",
+    "searchAlphabet": "Tìm chữ cái (A, Ă, Â...)",
+    "searchVocabulary": "Tìm từ vựng...",
+    "clearSearch": "Xóa tìm kiếm",
+    "filters": "Bộ lọc và sắp xếp",
+    "sort": "Sắp xếp:",
+    "region": "Vùng:",
+    "regions": { "all": "Tất cả", "north": "Bắc", "central": "Trung", "south": "Nam", "common": "Chung" },
+    "selectLetter": "Chọn chữ cái để xem ký hiệu",
+    "selectWord": "Chọn từ để xem ký hiệu",
+    "available": "Có video",
+    "unavailable": "Chưa có video",
+    "pendingVideo": "Video chữ {{letter}} sẽ được bổ sung sau.",
+    "alphabetCount": "{{count}} chữ cái · {{ready}}/{{total}} video",
+    "vocabularyCount": "{{count}} từ vựng",
+    "noResults": "Không tìm thấy kết quả.",
+    "loadingVideo": "Đang tải video...",
+    "videoError": "Không thể phát video. Kiểm tra kết nối mạng rồi thử lại.",
+    "retry": "Thử lại"
   },
   "camera": {
     "scanning": "Đang quét...",

@@ -11,6 +11,7 @@ const OLLAMA_TIMEOUT_MS = 30000
 
 // Thêm dialect vào signature
 export async function buildSentence(tokens, options = {}) {
+  throwIfAborted(options.signal)
   // options = { dialect, userDictionary }
   if (!tokens || tokens.length === 0) return ''
 
@@ -18,6 +19,7 @@ export async function buildSentence(tokens, options = {}) {
   if (cleanTokens.length === 0) return ''
 
   const firstSentence = cleanSentence(await callProvider(cleanTokens, options))
+  throwIfAborted(options.signal)
   const firstMissing = findMissingTokens(firstSentence, cleanTokens)
   if (isAcceptableSentence(firstSentence, cleanTokens, firstMissing)) return firstSentence
 
@@ -29,12 +31,20 @@ export async function buildSentence(tokens, options = {}) {
     needsNaturalRewrite: isBareGlossEcho(firstSentence, cleanTokens),
   }
   const correctedSentence = cleanSentence(await callProvider(cleanTokens, retryOptions))
+  throwIfAborted(options.signal)
   const correctedMissing = findMissingTokens(correctedSentence, cleanTokens)
   if (isAcceptableSentence(correctedSentence, cleanTokens, correctedMissing)) {
     return correctedSentence
   }
 
   throw new Error('LLM could not produce an acceptable Vietnamese sentence')
+}
+
+function throwIfAborted(signal) {
+  if (!signal?.aborted) return
+  const error = new Error('Sentence building cancelled')
+  error.name = 'AbortError'
+  throw error
 }
 
 async function callProvider(tokens, options) {
@@ -102,6 +112,7 @@ async function callGroq(tokens, options) {
 
   const res = await fetch(GROQ_API_URL, {
     method: 'POST',
+    signal: options.signal,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${GROQ_API_KEY}`
@@ -127,6 +138,9 @@ async function callOllama(tokens, options) {
   }
 
   const controller = new AbortController()
+  const abortFromCaller = () => controller.abort()
+  options.signal?.addEventListener('abort', abortFromCaller, { once: true })
+  if (options.signal?.aborted) controller.abort()
   // A local model can need several seconds to load on the first request.
   const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS)
   try {
@@ -147,10 +161,12 @@ async function callOllama(tokens, options) {
     return data.response.trim()
   } catch (error) {
     if (error?.name === 'AbortError') {
+      if (options.signal?.aborted) throw error
       throw new Error('Ollama request timed out')
     }
     throw error
   } finally {
     clearTimeout(timeoutId)
+    options.signal?.removeEventListener('abort', abortFromCaller)
   }
 }

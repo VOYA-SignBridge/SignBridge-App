@@ -1,0 +1,4 @@
+# Preserve exact bytes of model assets checked against SHA-256 in the registry.
+android/app/src/main/assets/*.json -text
+android/app/src/main/assets/*.tflite -text
+android/app/src/main/assets/*.pte -text

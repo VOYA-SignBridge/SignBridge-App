@@ -11,6 +11,7 @@ import {
   Keyboard,
   Alert,
   Modal,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -21,6 +22,7 @@ import SignLanguageCamera from '@/components/SignLanguageCamera';
 import WordMode from '@/components/translation/WordMode';
 import AlphabetMode from '@/components/translation/AlphabetMode';
 import { buildSentence } from '@/llm/llmService';
+import { SENTENCE_BUILDING_AVAILABLE } from '@/config';
 import { useDictionaryStore } from '../data/useDictionaryStore';
 import { getSignVideoUrl } from '../utils/CloudinaryHelper';
 import {
@@ -48,6 +50,7 @@ export default function TranslationScreen() {
   const [recognizedSignsText, setRecognizedSignsText] = useState('');
   const [completedSentence, setCompletedSentence] = useState('');
   const [isBuildingSentence, setIsBuildingSentence] = useState(false);
+  const [isSentenceBuildingEnabled, setIsSentenceBuildingEnabled] = useState<boolean>(SENTENCE_BUILDING_AVAILABLE);
   const [sentenceError, setSentenceError] = useState('');
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [showPronounPicker, setShowPronounPicker] = useState(false);
@@ -58,6 +61,9 @@ export default function TranslationScreen() {
   const isEditingRecognizedSignsRef = useRef(false);
   const recognizedSignsEditorRef = useRef<TextInput>(null);
   const sentenceRequestRef = useRef(0);
+  // Camera callbacks can retain an older render; read the current toggle synchronously.
+  const sentenceBuildingEnabledRef = useRef<boolean>(SENTENCE_BUILDING_AVAILABLE);
+  const sentenceAbortRef = useRef<AbortController | null>(null);
   const { preference: defaultPronouns } = usePronouns();
   const effectivePronouns = pronounOverride ?? defaultPronouns;
 
@@ -79,7 +85,11 @@ export default function TranslationScreen() {
   }, [player, videoUrl]);
 
   const createSentence = useCallback(async (tokens: string[]) => {
+    if (!SENTENCE_BUILDING_AVAILABLE || !sentenceBuildingEnabledRef.current || tokens.length === 0) return;
     const requestId = ++sentenceRequestRef.current;
+    sentenceAbortRef.current?.abort();
+    const controller = new AbortController();
+    sentenceAbortRef.current = controller;
     setIsBuildingSentence(true);
     setSentenceError('');
 
@@ -88,20 +98,22 @@ export default function TranslationScreen() {
         speakerPronoun: effectivePronouns.speakerPronoun,
         listenerPronoun: effectivePronouns.listenerPronoun,
         addSubject: effectivePronouns.addSubject,
+        signal: controller.signal,
       });
       if (requestId === sentenceRequestRef.current) {
         setCompletedSentence(sentence);
         setSentenceError('');
       }
     } catch (error) {
-      console.warn('[LLM] Could not build a sentence:', error);
       if (requestId === sentenceRequestRef.current) {
+        console.warn('[LLM] Could not build a sentence:', error);
         setCompletedSentence('');
         setSentenceError(t('translation.sentenceBuildError'));
       }
     } finally {
       if (requestId === sentenceRequestRef.current) {
         setIsBuildingSentence(false);
+        sentenceAbortRef.current = null;
       }
     }
   }, [
@@ -111,9 +123,31 @@ export default function TranslationScreen() {
     t,
   ]);
 
+  const toggleSentenceBuilding = (enabled: boolean) => {
+    if (!SENTENCE_BUILDING_AVAILABLE) return;
+    sentenceBuildingEnabledRef.current = enabled;
+    setIsSentenceBuildingEnabled(enabled);
+    sentenceRequestRef.current += 1;
+    sentenceAbortRef.current?.abort();
+    sentenceAbortRef.current = null;
+    setIsBuildingSentence(false);
+    setSentenceError('');
+    if (!enabled) setShowPronounPicker(false);
+    if (enabled && recognizedTokensRef.current.length > 0) {
+      void createSentence([...recognizedTokensRef.current]);
+    }
+  };
+
+  useEffect(() => () => {
+    sentenceRequestRef.current += 1;
+    sentenceAbortRef.current?.abort();
+  }, []);
+
   const resetTranslation = useCallback(() => {
     // Invalidate an in-flight LLM response so it cannot repopulate a cleared box.
     sentenceRequestRef.current += 1;
+    sentenceAbortRef.current?.abort();
+    sentenceAbortRef.current = null;
     recognizedTokensRef.current = [];
     recognizedSignsDraftRef.current = '';
     isEditingRecognizedSignsRef.current = false;
@@ -138,6 +172,8 @@ export default function TranslationScreen() {
 
     // Draft changes only reach the token list and LLM after confirmation.
     sentenceRequestRef.current += 1;
+    sentenceAbortRef.current?.abort();
+    sentenceAbortRef.current = null;
     setIsBuildingSentence(false);
     recognizedTokensRef.current = tokens;
     setRecognizedTokens(tokens);
@@ -167,6 +203,8 @@ export default function TranslationScreen() {
   const handleCompletedSentenceChange = useCallback((sentence: string) => {
     // A manual correction takes precedence over a response still in flight.
     sentenceRequestRef.current += 1;
+    sentenceAbortRef.current?.abort();
+    sentenceAbortRef.current = null;
     setIsBuildingSentence(false);
     setCompletedSentence(sentence);
     setSentenceError('');
@@ -239,7 +277,7 @@ export default function TranslationScreen() {
         <Modal
           transparent
           animationType="fade"
-          visible={showPronounPicker}
+          visible={SENTENCE_BUILDING_AVAILABLE && showPronounPicker}
           onRequestClose={() => setShowPronounPicker(false)}
         >
           <TouchableWithoutFeedback onPress={() => setShowPronounPicker(false)}>
@@ -308,7 +346,9 @@ export default function TranslationScreen() {
                 {t('translation.recognizedSignsEditorTitle')}
               </Text>
               <Text style={styles.recognizedEditorDescription}>
-                {t('translation.recognizedSignsEditorDescription')}
+                {t(isSentenceBuildingEnabled
+                  ? 'translation.recognizedSignsEditorDescription'
+                  : 'translation.recognizedSignsEditorDescriptionWithoutBuild')}
               </Text>
               <TextInput
                 ref={recognizedSignsEditorRef}
@@ -376,18 +416,20 @@ export default function TranslationScreen() {
 
         {mode === 'word' && (
           <View style={styles.cameraResultsContainer}>
-            <TouchableOpacity
-              style={styles.quickPronounButton}
+            {SENTENCE_BUILDING_AVAILABLE && <TouchableOpacity
+              style={[styles.quickPronounButton, !isSentenceBuildingEnabled && { opacity: 0.45 }]}
               onPress={() => setShowPronounPicker(true)}
+              disabled={!isSentenceBuildingEnabled}
               accessibilityRole="button"
               accessibilityLabel={`${t('translation.quickPronouns')}: ${pronounPairLabel}`}
+              accessibilityState={{ disabled: !isSentenceBuildingEnabled }}
             >
               <Ionicons name="people-outline" size={15} color="#fff" />
               <Text style={styles.quickPronounText} numberOfLines={1}>
                 {t('translation.quickPronouns')}: {pronounPairLabel}
               </Text>
               <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.75)" />
-            </TouchableOpacity>
+            </TouchableOpacity>}
 
             <View style={[styles.cameraResultBox, { borderColor: 'rgba(255,255,255,0.1)' }]}>
               <View style={styles.resultHeaderRow}>
@@ -425,10 +467,22 @@ export default function TranslationScreen() {
               </Text>
             </View>
 
-            <View style={[styles.cameraResultBox, { borderColor: 'rgba(255,255,255,0.1)' }]}>
-              <Text style={[styles.cameraResultLabel, { color: theme.primary }]}>
-                {t('translation.completedSentence')}
-              </Text>
+            {SENTENCE_BUILDING_AVAILABLE && <View style={[styles.cameraResultBox, { borderColor: 'rgba(255,255,255,0.1)' }]}>
+              <View style={styles.resultHeaderRow}>
+                <Text style={[styles.cameraResultLabel, styles.resultHeaderLabel, { color: theme.primary }]}>
+                  {t('translation.completedSentence')}
+                </Text>
+                <View style={styles.sentenceToggleRow}>
+                  <Text style={styles.sentenceToggleText}>{t('translation.autoBuildSentence')}</Text>
+                  <Switch
+                    value={isSentenceBuildingEnabled}
+                    onValueChange={toggleSentenceBuilding}
+                    trackColor={{ false: '#555', true: theme.primary }}
+                    thumbColor="#fff"
+                    accessibilityLabel={t('translation.autoBuildSentence')}
+                  />
+                </View>
+              </View>
               <TextInput
                 style={[styles.cameraResultText, styles.completedSentenceInput]}
                 value={completedSentence}
@@ -440,17 +494,20 @@ export default function TranslationScreen() {
                 accessibilityLabel={t('translation.completedSentence')}
                 accessibilityHint={t('translation.editSentenceHint')}
               />
-              {isBuildingSentence && (
+              {!isSentenceBuildingEnabled && (
+                <Text style={styles.buildingSentenceText}>{t('translation.sentenceBuildingDisabled')}</Text>
+              )}
+              {isSentenceBuildingEnabled && isBuildingSentence && (
                 <Text style={styles.buildingSentenceText}>{t('translation.buildingSentence')}</Text>
               )}
-              {!!sentenceError && (
+              {isSentenceBuildingEnabled && !!sentenceError && (
                 <View style={styles.sentenceErrorRow}>
                   <Text style={[styles.sentenceErrorText, { color: theme.error }]}>
                     {sentenceError}
                   </Text>
                   <TouchableOpacity
                     onPress={() => void createSentence([...recognizedTokensRef.current])}
-                    disabled={recognizedTokensRef.current.length === 0 || isBuildingSentence}
+                    disabled={!isSentenceBuildingEnabled || recognizedTokensRef.current.length === 0 || isBuildingSentence}
                     style={styles.retrySentenceButton}
                   >
                     <Ionicons name="refresh" size={14} color={theme.primary} />
@@ -460,7 +517,7 @@ export default function TranslationScreen() {
                   </TouchableOpacity>
                 </View>
               )}
-            </View>
+            </View>}
 
           </View>
         )}
@@ -578,6 +635,8 @@ export default function TranslationScreen() {
 }
 
 const styles = StyleSheet.create({
+  sentenceToggleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  sentenceToggleText: { color: 'rgba(255,255,255,0.8)', fontSize: 12 },
   root: { flex: 1 },
 
   // Body

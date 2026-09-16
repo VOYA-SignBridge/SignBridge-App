@@ -27,12 +27,17 @@ def main():
         model_id = registry["modes"]["alphabet"]
         config = registry["models"][model_id]
         manifest = {}
-        for entry in registry["models"].values():
-            for key in ("modelFile", "labelsFile"):
+        for entry_id, entry in registry["models"].items():
+            for key in ("modelFile", "labelsFile", "metadataFile"):
+                if key not in entry:
+                    continue
                 name = entry[key]
                 packed = z.read("assets/" + name)
                 assert packed == (ASSETS / name).read_bytes(), f"APK contains stale asset {name}"
                 manifest[name] = sha(packed)
+                expected = entry.get(key.replace("File", "Sha256"))
+                if expected is not None:
+                    assert manifest[name] == expected, f"{entry_id}: {key} SHA-256 mismatch"
         assert manifest[config["modelFile"]] == config["modelSha256"]
         assert manifest[config["labelsFile"]] == config["labelsSha256"]
         abis = sorted({name.split('/')[1] for name in z.namelist() if name.startswith('lib/') and name.endswith('.so')})

@@ -2,7 +2,7 @@
   "tabs": {
     "translate": "Translate",
     "chat": "Chat",
-    "dictionary": "Dictionary",
+    "dictionary": "Library",
     "settings": "Settings"
   },
   "auth": {
@@ -65,6 +65,8 @@
     "greetingSubtitle": "Enter text and I'll translate it\ninto sign language.",
     "clear": "Clear",
     "buildingSentence": "Building a complete sentence...",
+    "autoBuildSentence": "Auto build",
+    "sentenceBuildingDisabled": "Automatic sentence building is off. You can still recognize signs and edit the sentence manually.",
     "sentenceBuildError": "Could not build a complete sentence. Check the LLM service and try again.",
     "retrySentence": "Retry",
     "editRecognizedSignsHelper": "Tap to edit · Add signs with commas or line breaks",
@@ -73,6 +75,7 @@
     "cancelRecognizedSigns": "Cancel",
     "recognizedSignsEditorTitle": "Edit recognized signs",
     "recognizedSignsEditorDescription": "Enter signs separated by commas or line breaks. The complete sentence will be rebuilt after confirmation.",
+    "recognizedSignsEditorDescriptionWithoutBuild": "Enter signs separated by commas or line breaks. Automatic sentence building is off, so confirming only updates the signs.",
     "editSentenceHint": "You can edit the completed sentence",
     "quickPronouns": "Forms of address",
     "defaultPronouns": "Default: {{pair}}",
@@ -81,6 +84,29 @@
     "noAutomaticSubjectShort": "Do not add",
     "noData": "No data",
     "noDataMsg": "\"{{word}}\" is not yet in the SignBridge dictionary."
+  },
+  "library": {
+    "title": "Library",
+    "vocabulary": "Vocabulary",
+    "alphabet": "Alphabet",
+    "searchAlphabet": "Search letters (A, Ă, Â...)",
+    "searchVocabulary": "Search vocabulary...",
+    "clearSearch": "Clear search",
+    "filters": "Filters and sorting",
+    "sort": "Sort:",
+    "region": "Region:",
+    "regions": { "all": "All", "north": "North", "central": "Central", "south": "South", "common": "Common" },
+    "selectLetter": "Select a letter to view its sign",
+    "selectWord": "Select a word to view its sign",
+    "available": "Video available",
+    "unavailable": "No video yet",
+    "pendingVideo": "The video for {{letter}} will be added later.",
+    "alphabetCount": "{{count}} letters · {{ready}}/{{total}} videos",
+    "vocabularyCount": "{{count}} vocabulary entries",
+    "noResults": "No results found.",
+    "loadingVideo": "Loading video...",
+    "videoError": "Could not play the video. Check your connection and try again.",
+    "retry": "Retry"
   },
   "camera": {
     "scanning": "Scanning...",
