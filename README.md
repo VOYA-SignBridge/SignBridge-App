@@ -53,10 +53,10 @@ Join our community of developers creating universal apps.
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
 
-## Alphabet HandGCN on-device (Android)
+## Alphabet ASL static model on-device (Android)
 
-Alphabet uses `handgcn_alphabet_20260914_094314.pte`, bundled with its original
-`.pte.metadata.json` in `android/app/src/main/assets`. It runs locally through
+Alphabet uses `asl_static_alphabet_26class_fp32.pte`, bundled with its original
+`.json` contract in `android/app/src/main/assets`. It runs locally through
 the `AlphabetModel` Kotlin bridge and ExecuTorch 1.4.0/XNNPACK CPU. No model
 download, HTTP inference request or Python server is involved. Word mode still
 uses its existing TFLite bridge, model registry, normalization and UI.
@@ -117,37 +117,19 @@ Verify the running AVD with `adb -s <serial> emu avd name`,
 The local inference contract is:
 
 1. The existing camera supplies unmirrored MediaPipe normalized XYZ landmarks.
-   `onAlphabetHands` preserves full float precision and handedness scores for
-   both detections; the existing word events remain unchanged.
-2. `src/utils/alphabet/realtimeFlatten.ts` and `handIdentity.ts` port the supplied
-   reference frontend: swap raw MediaPipe handedness into anatomical slots,
-   keep wrist anchors to prevent identity flips, and preserve two detections
-   even when their labels match. Do **not** mirror X. Each raw frame is 126
-   floats: left 21 XYZ landmarks, then right 21 XYZ landmarks. Absent hands are zero.
-3. Collect 60 real frames, oldest first. The existing native throttle is 50 ms,
-   so first recognition requires roughly 3 seconds or more of visible hands.
-   Debounced hand loss, camera gaps and unmount invalidate stale predictions.
-4. Kotlin applies the server's exact `hands126_v1` independently to each hand:
-   subtract wrist XY, calculate XY span over points with translated norm > 1e-6,
-   divide XY by the maximum span if > 1e-6, and leave Z unchanged. A whole empty
-   hand stays zero. Zero triples inside a nonempty hand are translated too,
-   matching Python (different from the legacy TFLite helper).
-5. Call `forward` with **one** float32 tensor `[1, 60, 126]`. The PTE contains the
-   graph/weights; no lengths tensor or manual GCN reshaping is needed. Output is
-   `[1, 30]` logits. Stable softmax, argmax and the metadata's ordered
-   `idx_to_label` produce `{modelId, classIndex, label, label_key, confidence}`.
-   Labels such as Â, Ă, Đ, Ô, Ơ and Ư are decoded directly from metadata.
-6. The alphabet UI retains its 65% confidence threshold, two consecutive matching
+   `onAlphabetHands` preserves full float precision and handedness scores; the
+   existing word events remain unchanged.
+2. Alphabet chooses the detected hand with the highest MediaPipe handedness score
+   and flattens its 21 XYZ landmarks in landmark order into 63 float values.
+3. Kotlin reads all 63 means and standard deviations from the bundled JSON and
+   applies feature-wise `(value - mean) / std` exactly once.
+4. `forward` receives one float32 tensor `[1, 63]` and returns `[1, 26]` logits.
+   Stable softmax and argmax select the label whose JSON `label_map` index matches
+   the model output, covering `A` through `Z` at indices `0` through `25`.
+5. The alphabet UI retains its 65% confidence threshold, two consecutive matching
    predictions and suppression of duplicate committed letters until hand reset
    or a different stable letter. Inference runs on a serial native worker;
    initialization verifies the model checksum and warms up the actual graph.
-
-**Reference discrepancy:** the exported metadata says `MP_Left(63)+MP_Right(63)`,
-but the supplied serving frontend swaps raw handedness and applies identity
-tracking. This integration intentionally follows the executable serving client,
-including `MIRROR_SERVING_PAYLOAD=false`, and then the server's normalization.
-Metadata is preserved verbatim. This does not resolve the reference corpus's
-documented mixed mirror conventions; recognition quality needs real camera tests.
 
 Validation commands:
 

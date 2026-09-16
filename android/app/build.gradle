@@ -126,7 +126,8 @@ dependencies {
     // Keep the existing LiteRT runtime for word models, independently of
     // the ExecuTorch runtime used by alphabet recognition.
     implementation 'com.google.ai.edge.litert:litert:1.0.1'
-    // HandGCN alphabet only. Includes XNNPACK and portable CPU kernels.
+    // Latest published Android artifact; device tests verify compatibility with
+    // the ASL static PTE exported by ExecuTorch 1.4.1.
     implementation 'org.pytorch:executorch-android:1.4.0'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'com.google.code.gson:gson:2.11.0'

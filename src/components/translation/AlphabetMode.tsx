@@ -6,8 +6,6 @@ import {
   predictAlphabet,
   type AlphabetModelConfig,
 } from '@/config/alphabetModel';
-import { flattenRealtimeHands } from '@/utils/alphabet/realtimeFlatten';
-import type { HandAnchors } from '@/utils/alphabet/handIdentity';
 import type { AlphabetHandsEvent } from '@/utils/alphabet/types';
 
 const THROTTLE_MS = 60;
@@ -21,10 +19,27 @@ function getErrorMessage(error: unknown): string {
 }
 
 const ALPHABET_LABELS = new Set([
-  'A', 'Ă', 'Â', 'B', 'C', 'D', 'Đ', 'E', 'Ê', 'G',
-  'H', 'I', 'K', 'L', 'M', 'N', 'O', 'Ô', 'Ơ', 'P',
-  'Q', 'R', 'S', 'T', 'U', 'Ư', 'V', 'X', 'Y', 'Z',
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+  'U', 'V', 'W', 'X', 'Y', 'Z',
 ]);
+
+function toStaticHandFrame(event: AlphabetHandsEvent): number[] | null {
+  const hand = [...(event.hands ?? [])]
+    .filter(({ landmarks }) => Array.isArray(landmarks) && landmarks.length === 21)
+    .sort((a, b) => b.score - a.score)[0];
+  if (!hand) return null;
+
+  const frame = new Array<number>(63);
+  for (let point = 0; point < 21; point += 1) {
+    const landmark = hand.landmarks[point];
+    const base = point * 3;
+    frame[base] = Number(landmark.x);
+    frame[base + 1] = Number(landmark.y);
+    frame[base + 2] = Number(landmark.z);
+  }
+  return frame.every(Number.isFinite) ? frame : null;
+}
 
 const { HandLandmarks } = NativeModules;
 
@@ -48,10 +63,7 @@ export default function AlphabetMode({ onResult, theme }: Props) {
   useEffect(() => {
     let mounted = true;
     let config: AlphabetModelConfig | null = null;
-    let frames: number[][] = [];
-    let anchors: HandAnchors = {};
     let predicting = false;
-    let lastFrameTime = 0;
     let lastPredictionTime = 0;
     let generation = 0;
     let candidateLabel = '';
@@ -59,9 +71,7 @@ export default function AlphabetMode({ onResult, theme }: Props) {
     let lastCommittedLabel = '';
     setModelError('');
 
-    const resetSequence = () => {
-      frames = [];
-      anchors = {};
+    const resetRecognition = () => {
       candidateLabel = '';
       candidateCount = 0;
       lastCommittedLabel = '';
@@ -70,10 +80,10 @@ export default function AlphabetMode({ onResult, theme }: Props) {
       setStatusMsg('');
     };
 
-    const predictLocal = async (snapshot: number[][], requestGeneration: number) => {
+    const predictLocal = async (frame: number[], requestGeneration: number) => {
       predicting = true;
       try {
-        const data = await predictAlphabet(snapshot);
+        const data = await predictAlphabet(frame);
         // Ignore results after unmount, hand loss or a camera gap.
         if (!mounted || requestGeneration !== generation) return;
         const label = String(data?.label ?? '').trim().toLocaleUpperCase('vi-VN');
@@ -111,7 +121,7 @@ export default function AlphabetMode({ onResult, theme }: Props) {
         if (!mounted || requestGeneration !== generation) return;
         console.error('Alphabet ExecuTorch prediction failed:', error);
         config = null; // Stop retrying a broken native runtime every camera frame.
-        resetSequence();
+        resetRecognition();
         setModelError(t('camera.modelError', { message: getErrorMessage(error) }));
       } finally {
         lastPredictionTime = Date.now();
@@ -131,23 +141,13 @@ export default function AlphabetMode({ onResult, theme }: Props) {
     const presenceSub = emitter.addListener('onHandLandmarksDetected', (event) => {
       const present = Boolean(event.landmarks?.length);
       setHasHand(present);
-      if (!present) resetSequence();
+      if (!present) resetRecognition();
     });
     const framesSub = emitter.addListener('onAlphabetHands', (event: AlphabetHandsEvent) => {
-      if (!config || !event.hands?.length) return;
-      const now = event.timestamp;
-      // Also reset after camera pauses, where no no-hand event is delivered.
-      if (lastFrameTime && now - lastFrameTime > 400) resetSequence();
-      lastFrameTime = now;
-      const vector = flattenRealtimeHands({
-        multiHandLandmarks: event.hands.map((hand) => hand.landmarks),
-        multiHandedness: event.hands.map((hand) => ({ label: hand.label, score: hand.score })),
-      }, undefined, { anchors, now });
-      frames.push(Array.from(vector));
-      if (frames.length > config.sequenceLength) frames.shift();
-      if (frames.length === config.sequenceLength && !predicting &&
-          Date.now() - lastPredictionTime >= THROTTLE_MS) {
-        void predictLocal(frames.slice(), generation);
+      if (!config || predicting || Date.now() - lastPredictionTime < THROTTLE_MS) return;
+      const frame = toStaticHandFrame(event);
+      if (frame?.length === config.featureDimension) {
+        void predictLocal(frame, generation);
       }
     });
 

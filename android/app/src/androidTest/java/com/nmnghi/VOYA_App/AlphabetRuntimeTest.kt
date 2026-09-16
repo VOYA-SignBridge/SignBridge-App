@@ -13,46 +13,53 @@ import org.pytorch.executorch.Tensor
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
+import kotlin.math.exp
 
-/** Executes the actual packaged PTE/JNI and compares it with the original PT. */
+/** Executes the actual packaged ASL PTE/JNI and checks the JSON runtime contract. */
 @RunWith(AndroidJUnit4::class)
 class AlphabetRuntimeTest {
-    @Test fun packagedPteMatchesOriginalPytorchCheckpoint() {
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val context = instrumentation.targetContext
-        val cases = JSONObject(instrumentation.context.assets.open("alphabet-golden.json")
-            .bufferedReader().use { it.readText() }).getJSONArray("cases")
-        val file = File(context.cacheDir, "alphabet-runtime-test.pte")
-        context.assets.open("handgcn_alphabet_20260914_094314.pte").use { source ->
+    private fun metadata(): JSONObject {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        return JSONObject(context.assets.open("asl_static_alphabet_26class_fp32.json")
+            .bufferedReader().use { it.readText() })
+    }
+
+    private fun normalization(metadata: JSONObject): Pair<FloatArray, FloatArray> {
+        val normalization = metadata.getJSONObject("normalization")
+        fun values(key: String): FloatArray {
+            val array = normalization.getJSONArray(key)
+            return FloatArray(array.length()) { array.getDouble(it).toFloat() }
+        }
+        return values("mean") to values("std")
+    }
+
+    @Test fun packagedPteRunsWithDeclaredInputAndOutputShapes() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val metadata = metadata()
+        val file = File(context.cacheDir, "asl-static-alphabet-runtime-test.pte")
+        context.assets.open("asl_static_alphabet_26class_fp32.pte").use { source ->
             file.outputStream().use { source.copyTo(it) }
         }
         val model = Module.load(file.path)
         try {
-            for (caseIndex in 0 until cases.length()) {
-                val case = cases.getJSONObject(caseIndex)
-                val raw = case.getJSONArray("raw")
-                val input = FloatArray(60 * 126)
-                for (t in 0 until 60) {
-                    AlphabetPreprocessor.normalizeFrame(FloatArray(126) { raw.getDouble(t * 126 + it).toFloat() })
-                        .copyInto(input, t * 126)
-                }
-                val output = model.forward(EValue.from(Tensor.fromBlob(input, longArrayOf(1, 60, 126))))[0].toTensor()
-                assertArrayEquals(longArrayOf(1, 30), output.shape())
-                val expected = case.getJSONArray("logits")
-                val actual = output.dataAsFloatArray
-                for (i in actual.indices) {
-                    val value = expected.getDouble(i).toFloat()
-                    assertEquals("case=$caseIndex logit=$i", value, actual[i], 2e-4f + 2e-4f * kotlin.math.abs(value))
-                }
-            }
+            val (mean, std) = normalization(metadata)
+            val input = AlphabetPreprocessor.normalize(mean, mean, std)
+            val output = model.forward(
+                EValue.from(Tensor.fromBlob(input, longArrayOf(1, 63)))
+            )[0].toTensor()
+            assertArrayEquals(longArrayOf(1, 26), output.shape())
+            assertEquals(26, output.dataAsFloatArray.size)
+            assertTrue(output.dataAsFloatArray.all { it.isFinite() })
         } finally {
             model.destroy()
             file.delete()
         }
     }
 
-    @Test fun reactNativeBridgeInitializesAndDecodesMetadataLabels() {
+    @Test fun reactNativeBridgeNormalizesAndDecodesJsonLabelMap() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val metadata = metadata()
         val module = AlphabetModelModule(BridgeReactContext(context))
         fun call(action: (Promise) -> Unit): WritableMap {
             val result = CompletableFuture<WritableMap>()
@@ -63,27 +70,48 @@ class AlphabetRuntimeTest {
             action(promise)
             return result.get(30, TimeUnit.SECONDS)
         }
+
         try {
-            assertEquals("executorch", call(module::initialize).getString("runtime"))
-            val frames = Arguments.createArray()
-            repeat(60) {
-                frames.pushArray(Arguments.createArray().apply { repeat(126) { pushDouble(0.0) } })
+            val config = call(module::initialize)
+            assertEquals("asl_static_alphabet_26class_fp32", config.getString("id"))
+            assertEquals("executorch", config.getString("runtime"))
+            assertEquals(1, config.getInt("sequenceLength"))
+            assertEquals(63, config.getInt("featureDimension"))
+            assertEquals(26, config.getInt("classCount"))
+
+            val (mean, _) = normalization(metadata)
+            val frame = Arguments.createArray().apply {
+                mean.forEach { pushDouble(it.toDouble()) }
             }
-            val prediction = call { module.predict(frames, it) }
-            val labels = JSONObject(context.assets.open("handgcn_alphabet_20260914_094314.pte.metadata.json")
-                .bufferedReader().use { it.readText() }).getJSONArray("idx_to_label")
-            val expected = labels.getJSONObject(prediction.getInt("classIndex"))
-            assertEquals(expected.getString("label_original"), prediction.getString("label"))
-            assertEquals(expected.getString("label_key"), prediction.getString("label_key"))
+            val prediction = call { module.predict(frame, it) }
+            val index = prediction.getInt("classIndex")
+            val labelMap = metadata.getJSONObject("label_map")
+            val expectedLabel = labelMap.keys().asSequence()
+                .first { labelMap.getInt(it) == index }
+            assertEquals(expectedLabel, prediction.getString("label"))
+            assertEquals(expectedLabel, prediction.getString("label_key"))
             assertTrue(prediction.getDouble("confidence") in 0.0..1.0)
-            val golden = JSONObject(InstrumentationRegistry.getInstrumentation().context.assets
-                .open("alphabet-golden.json").bufferedReader().use { it.readText() })
-                .getJSONArray("cases").getJSONObject(0).getJSONArray("logits")
-            val logits = (0 until golden.length()).map { golden.getDouble(it) }
-            val best = logits.indices.maxByOrNull { logits[it] }!!
-            assertEquals(best, prediction.getInt("classIndex"))
-            val confidence = 1.0 / logits.sumOf { kotlin.math.exp(it - logits[best]) }
-            assertEquals(confidence, prediction.getDouble("confidence"), 2e-4)
+
+            // Compare bridge argmax/softmax against the same packaged model on
+            // normalized zero input, proving preprocessing and label decoding.
+            val file = File(context.cacheDir, "asl-static-alphabet-bridge-test.pte")
+            context.assets.open("asl_static_alphabet_26class_fp32.pte").use { source ->
+                file.outputStream().use { source.copyTo(it) }
+            }
+            val direct = Module.load(file.path)
+            try {
+                val logits = direct.forward(EValue.from(
+                    Tensor.fromBlob(FloatArray(63), longArrayOf(1, 63))
+                ))[0].toTensor().dataAsFloatArray
+                val best = logits.indices.maxByOrNull { logits[it] }!!
+                assertEquals(best, index)
+                val confidence = 1.0 / logits.sumOf { exp((it - logits[best]).toDouble()) }
+                assertEquals(confidence, prediction.getDouble("confidence"),
+                    2e-4 + 2e-4 * abs(confidence))
+            } finally {
+                direct.destroy()
+                file.delete()
+            }
         } finally {
             module.invalidate()
         }

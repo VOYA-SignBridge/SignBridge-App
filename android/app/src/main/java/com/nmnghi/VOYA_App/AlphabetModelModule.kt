@@ -14,15 +14,19 @@ import kotlin.math.exp
 /** Local alphabet runtime. Word inference remains in HandLandmarksModule. */
 class AlphabetModelModule(context: ReactApplicationContext) : ReactContextBaseJavaModule(context) {
     companion object {
-        private const val MODEL_ID = "handgcn_alphabet_20260914_094314"
+        private const val MODEL_ID = "asl_static_alphabet_26class_fp32"
         private const val MODEL_FILE = "$MODEL_ID.pte"
-        private const val CLASS_COUNT = 30
+        private const val METADATA_FILE = "$MODEL_ID.json"
+        private const val MODEL_SHA256 = "22437659ab7682b995dadf3dd9f13e83e7321048436a278be0a94350fdabd18f"
+        private const val CLASS_COUNT = 26
     }
 
     private val worker = Executors.newSingleThreadExecutor()
     // Access only on worker: Module.forward and destroy must never overlap.
     private var model: Module? = null
-    private var labels: List<Pair<String, String>> = emptyList()
+    private var labels: List<String> = emptyList()
+    private var normalizationMean = FloatArray(0)
+    private var normalizationStd = FloatArray(0)
 
     override fun getName() = "AlphabetModel"
 
@@ -49,23 +53,23 @@ class AlphabetModelModule(context: ReactApplicationContext) : ReactContextBaseJa
         promise.resolve(Arguments.createMap().apply {
             putString("id", MODEL_ID)
             putString("runtime", "executorch")
-            putInt("sequenceLength", AlphabetPreprocessor.SEQUENCE_LENGTH)
+            putInt("sequenceLength", 1)
             putInt("featureDimension", AlphabetPreprocessor.FEATURE_DIMENSION)
             putInt("classCount", CLASS_COUNT)
-            putString("normalizationVersion", "hands126_v1")
+            putString("normalizationVersion", "featurewise_standardization_v1")
         })
     }
 
     @ReactMethod
-    fun predict(frames: ReadableArray, promise: Promise) = submit(promise) {
-        require(frames.size() == 60) { "HandGCN expects exactly 60 frames" }
-        val input = FloatArray(60 * 126)
-        for (t in 0 until 60) {
-            val frame = requireNotNull(frames.getArray(t)) { "Frame $t is null" }
-            require(frame.size() == 126) { "Frame $t must contain 126 coordinates" }
-            val raw = FloatArray(126) { frame.getDouble(it).toFloat() }
-            AlphabetPreprocessor.normalizeFrame(raw).copyInto(input, t * 126)
+    fun predict(frame: ReadableArray, promise: Promise) = submit(promise) {
+        require(frame.size() == AlphabetPreprocessor.FEATURE_DIMENSION) {
+            "ASL static model expects exactly 63 coordinates"
         }
+        ensureModel()
+        val raw = FloatArray(AlphabetPreprocessor.FEATURE_DIMENSION) {
+            frame.getDouble(it).toFloat()
+        }
+        val input = AlphabetPreprocessor.normalize(raw, normalizationMean, normalizationStd)
         val logits = forward(ensureModel(), input)
         val index = logits.indices.maxByOrNull { logits[it] }!!
         val max = logits[index]
@@ -73,52 +77,72 @@ class AlphabetModelModule(context: ReactApplicationContext) : ReactContextBaseJa
         promise.resolve(Arguments.createMap().apply {
             putString("modelId", MODEL_ID)
             putInt("classIndex", index)
-            putString("label", labels[index].first)
-            putString("label_key", labels[index].second)
+            putString("label", labels[index])
+            putString("label_key", labels[index])
             putDouble("confidence", 1.0 / denominator)
         })
     }
 
     private fun forward(module: Module, input: FloatArray): FloatArray {
-        val outputs = module.forward(EValue.from(Tensor.fromBlob(input, longArrayOf(1, 60, 126))))
-        require(outputs.size == 1) { "HandGCN must return one logits tensor" }
+        val outputs = module.forward(EValue.from(Tensor.fromBlob(input, longArrayOf(1, 63))))
+        require(outputs.size == 1) { "ASL static model must return one logits tensor" }
         val tensor = outputs[0].toTensor()
         require(tensor.shape().contentEquals(longArrayOf(1, CLASS_COUNT.toLong()))) {
-            "HandGCN output must have shape [1, 30]"
+            "ASL static model output must have shape [1, 26]"
         }
         return tensor.dataAsFloatArray.also { logits ->
             require(logits.size == CLASS_COUNT && logits.all { it.isFinite() }) {
-                "HandGCN returned invalid logits"
+                "ASL static model returned invalid logits"
             }
         }
     }
 
     private fun ensureModel(): Module {
         model?.let { return it }
-        val metadata = JSONObject(reactApplicationContext.assets.open("$MODEL_FILE.metadata.json")
+        val metadata = JSONObject(reactApplicationContext.assets.open(METADATA_FILE)
             .bufferedReader(Charsets.UTF_8).use { it.readText() })
-        require(metadata.getString("format") == "voya-executorch-handgcn-v1")
-        require(metadata.getString("normalization_version") == "hands126_v1")
-        require(metadata.getInt("seq_len") == 60 && metadata.getInt("feature_dim") == 126)
+        require(metadata.getString("format") == "executorch_pte")
+        require(metadata.getString("precision") == "float32")
+        require(metadata.getString("backend") == "xnnpack")
+        require(metadata.getString("model_type") == "asl_static_mlp")
         require(metadata.getInt("num_classes") == CLASS_COUNT)
-        for ((key, expected) in listOf("input" to listOf(1, 60, 126), "output" to listOf(1, 30))) {
+        for ((key, expected) in listOf("input" to listOf(1, 63), "output" to listOf(1, 26))) {
             val spec = metadata.getJSONObject(key)
             val shape = spec.getJSONArray("shape")
-            require(spec.getString("dtype") == "float32")
             require((0 until shape.length()).map { shape.getInt(it) } == expected)
         }
-        val labelArray = metadata.getJSONArray("idx_to_label")
-        require(labelArray.length() == CLASS_COUNT)
-        labels = (0 until CLASS_COUNT).map {
-            val label = labelArray.getJSONObject(it)
-            label.getString("label_original") to label.getString("label_key")
+
+        val labelMap = metadata.getJSONObject("label_map")
+        require(labelMap.length() == CLASS_COUNT)
+        val orderedLabels = MutableList(CLASS_COUNT) { "" }
+        for (label in labelMap.keys()) {
+            val index = labelMap.getInt(label)
+            require(index in 0 until CLASS_COUNT && orderedLabels[index].isEmpty()) {
+                "Invalid or duplicate alphabet class index $index"
+            }
+            orderedLabels[index] = label
         }
-        require(labels.all { it.first.isNotBlank() && it.second.isNotBlank() })
+        require(orderedLabels == ('A'..'Z').map { it.toString() }) {
+            "ASL label_map must map A..Z to indices 0..25"
+        }
+        labels = orderedLabels
+
+        val normalization = metadata.getJSONObject("normalization")
+        fun floatArray(key: String): FloatArray {
+            val values = normalization.getJSONArray(key)
+            require(values.length() == AlphabetPreprocessor.FEATURE_DIMENSION) {
+                "normalization.$key must contain 63 values"
+            }
+            return FloatArray(values.length()) { values.getDouble(it).toFloat() }
+        }
+        normalizationMean = floatArray("mean")
+        normalizationStd = floatArray("std")
+        // Validate the complete preprocessing contract before loading the PTE.
+        AlphabetPreprocessor.normalize(normalizationMean, normalizationMean, normalizationStd)
 
         // ExecuTorch loads a real filesystem path. Use a content-addressed,
         // verified private copy so app updates cannot reuse stale model bytes.
-        val sha = metadata.getString("pte_sha256")
-        require(sha.matches(Regex("[0-9a-f]{64}")))
+        val sha = MODEL_SHA256
         val file = File(reactApplicationContext.filesDir, "$MODEL_ID-$sha.pte")
         fun hash(path: File): String {
             val digest = MessageDigest.getInstance("SHA-256")
@@ -138,8 +162,8 @@ class AlphabetModelModule(context: ReactApplicationContext) : ReactContextBaseJa
                 reactApplicationContext.assets.open(MODEL_FILE).use { source ->
                     temp.outputStream().use { source.copyTo(it) }
                 }
-                require(hash(temp) == sha) { "Bundled HandGCN model checksum mismatch" }
-                check(temp.renameTo(file)) { "Cannot install bundled HandGCN model" }
+                require(hash(temp) == sha) { "Bundled ASL static model checksum mismatch" }
+                check(temp.renameTo(file)) { "Cannot install bundled ASL static model" }
             } finally {
                 temp.delete()
             }
@@ -148,7 +172,7 @@ class AlphabetModelModule(context: ReactApplicationContext) : ReactContextBaseJa
         try {
             // Warm up and fail during initialization for incompatible exports,
             // missing kernels or wrong shapes, before accepting camera frames.
-            forward(loaded, FloatArray(60 * 126))
+            forward(loaded, FloatArray(AlphabetPreprocessor.FEATURE_DIMENSION))
             model = loaded
             return loaded
         } catch (error: Throwable) {

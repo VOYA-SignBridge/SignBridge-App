@@ -6,7 +6,7 @@ export type AlphabetModelConfig = {
   sequenceLength: number;
   featureDimension: number;
   classCount: number;
-  normalizationVersion: 'hands126_v1';
+  normalizationVersion: 'featurewise_standardization_v1';
 };
 
 export type AlphabetPrediction = {
@@ -20,7 +20,7 @@ export type AlphabetPrediction = {
 function nativeModel() {
   const module = NativeModules.AlphabetModel;
   if (Platform.OS !== 'android' || !module?.initialize || !module?.predict) {
-    throw new Error('HandGCN requires a rebuilt Android app with the ExecuTorch native module');
+    throw new Error('The ASL alphabet model requires a rebuilt Android app with the ExecuTorch native module');
   }
   return module;
 }
@@ -29,7 +29,7 @@ export function initializeAlphabetModel(): Promise<AlphabetModelConfig> {
   return nativeModel().initialize();
 }
 
-/** Raw, unmirrored, anatomically slotted frames; Kotlin normalizes exactly once. */
-export function predictAlphabet(frames: number[][]): Promise<AlphabetPrediction> {
-  return nativeModel().predict(frames);
+/** One raw MediaPipe hand (21 × xyz); Kotlin applies metadata mean/std exactly once. */
+export function predictAlphabet(frame: number[]): Promise<AlphabetPrediction> {
+  return nativeModel().predict(frame);
 }
