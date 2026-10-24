@@ -4,9 +4,36 @@
   "modes": {
     "alphabet": "voya_tcn_alphabet_30class_fp32_executorch_d7a6bee0",
     "word": "tcn_dialect-hoa-de_20260721_160609",
+    "alphabetHandgcn": "handgcn_lite_dialect-bang-chu-cai_20261019_223626",
     "alphabetX86Fallback": "model_bigru"
   },
   "models": {
+    "handgcn_lite_dialect-bang-chu-cai_20261019_223626": {
+      "runtime": "tflite",
+      "displayName": "HandGCN Lite Alphabet 2026-10-19",
+      "modelFile": "handgcn_lite_dialect-bang-chu-cai_20261019_223626.tflite",
+      "metadataFile": "handgcn_lite_dialect-bang-chu-cai_20261019_223626.metadata.json",
+      "labelsFile": "handgcn_lite_dialect-bang-chu-cai_20261019_223626_labels.json",
+      "sequenceLength": 60,
+      "featureDimension": 126,
+      "classCount": 30,
+      "signatureKey": "serving_default",
+      "frameInputName": "args_0",
+      "lengthInputName": "",
+      "outputName": "output_0",
+      "inputTensorName": "serving_default_args_0",
+      "outputTensorName": "serving_default_output_0_output",
+      "applySoftmax": true,
+      "outputType": "logits",
+      "mirrorInput": false,
+      "normalizationVersion": "hands126_v1",
+      "preprocessingProfile": "handgcn_lite_hands126_v1",
+      "sampleFps": 30,
+      "numThreads": 4,
+      "modelSha256": "d632ebd7cedb77bd9e8cbf0cb5aeeebf11840e8bd092af376a0643ea56c106bd",
+      "metadataSha256": "519423994792a1a945e25dadc97a79c7caf38327634a0015bd0a530e6d9bf4de",
+      "verificationStatus": "pending_assets_and_native"
+    },
     "tcn_20260624_232642": {
       "displayName": "TCN 2026-06-24",
       "modelFile": "tcn_20260624_232642.tflite",

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, NativeEventEmitter, NativeModules, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
+  assertAlphabetModelConfig,
   getTfliteModelConfig,
   predictWithTfliteModel,
   TFLITE_MODES,
@@ -33,9 +34,11 @@ const eventEmitter = new NativeEventEmitter(HandLandmarks);
 type Props = {
   onResult: (text: string) => void;
   theme: any;
+  // Nhận alias (vd. 'alphabetHandgcn') hoặc ID model; bỏ prop này để dùng Alphabet mặc định hiện tại.
+  modelOrMode?: string;
 };
 
-export default function AlphabetMode({ onResult, theme }: Props) {
+export default function AlphabetMode({ onResult, theme, modelOrMode = TFLITE_MODES.alphabet }: Props) {
   const { t } = useTranslation();
   const [statusMsg, setStatusMsg] = useState('');
   const [detectedChar, setDetectedChar] = useState('');
@@ -59,11 +62,14 @@ export default function AlphabetMode({ onResult, theme }: Props) {
 
 
   const predictLocal = useCallback(async (frames: number[][], generation: number, events: AlphabetFrame[]) => {
-    if (isPredicting.current) return;
+    const activeConfig = modelConfig.current;
+    if (isPredicting.current || !activeConfig) return;
     isPredicting.current = true;
 
     try {
-      const data = await predictWithTfliteModel(frames, TFLITE_MODES.alphabet);
+      // Preserve native ABI fallback when the existing default alias is used.
+      const predictionModel = modelOrMode === TFLITE_MODES.alphabet ? modelOrMode : activeConfig.id;
+      const data = await predictWithTfliteModel(frames, predictionModel);
       const label = String(data?.label ?? '')
         .trim()
         .toLocaleUpperCase('vi-VN');
@@ -72,6 +78,10 @@ export default function AlphabetMode({ onResult, theme }: Props) {
       // Ignore a prediction that completed after the hand disappeared and the
       // active sequence was reset.
       if (!mountedRef.current || !handPresent.current || generation !== sequenceGeneration.current) return;
+      // Không nhận nhãn thành HandGCN nếu native thực tế chạy một model khác.
+      if (activeConfig.preprocessingProfile && data?.modelId !== activeConfig.id) {
+        throw new Error('HandGCN prediction returned a different model');
+      }
       latestCapture.current = {
         schemaVersion: 1, pipelineVersion: 'alphabet-camera-v2',
         capturedAt: new Date().toISOString(), frames, events, prediction: data,
@@ -118,7 +128,7 @@ export default function AlphabetMode({ onResult, theme }: Props) {
       lastPredictionTime.current = Date.now();
       isPredicting.current = false;
     }
-  }, [onResult, t]);
+  }, [onResult, t, modelOrMode]);
 
   useEffect(() => {
     let mounted = true;
@@ -126,11 +136,22 @@ export default function AlphabetMode({ onResult, theme }: Props) {
     mountedRef.current = true;
     captureBlocked.current = false;
     setCaptureError('');
-    getTfliteModelConfig(TFLITE_MODES.alphabet)
+    // Khi đổi model, bắt đầu cửa sổ frame và chuỗi nhãn ổn định mới để không trộn với phiên trước.
+    setStatusMsg('');
+    setDetectedChar('');
+    setHasHand(false);
+    handPresent.current = false;
+    candidateLabel.current = '';
+    candidateCount.current = 0;
+    lastCommittedLabel.current = '';
+    lastPredictionTime.current = 0;
+    getTfliteModelConfig(modelOrMode)
       .then((config) => {
         if (!mounted) return;
-        if (config.normalizationVersion !== 'alphabet_hands126_v1' || config.sampleFps !== 30) {
-          throw new Error('Alphabet model sampling/preprocessing contract mismatch');
+        // Bridge thiếu profile/FPS phải bị chặn trước capture; không tự giả định native đã hỗ trợ HandGCN.
+        assertAlphabetModelConfig(config);
+        if (modelOrMode === TFLITE_MODES.alphabetHandgcn && !config.preprocessingProfile) {
+          throw new Error('HandGCN preprocessing profile is not available in the native module');
         }
         modelConfig.current = config;
         sampler.current = new AlphabetSampler(config.sequenceLength, config.featureDimension, config.sampleFps);
@@ -145,6 +166,7 @@ export default function AlphabetMode({ onResult, theme }: Props) {
     return () => {
       mounted = false;
       mountedRef.current = false;
+      // Vô hiệu hóa kết quả Promise cũ khi đổi model/unmount, dù inference native có thể vẫn đang chạy.
       sequenceGeneration.current += 1;
       HandLandmarks.stopAlphabetCapture();
       sampler.current = null;
@@ -153,7 +175,7 @@ export default function AlphabetMode({ onResult, theme }: Props) {
       recentEvents.current = [];
       latestCapture.current = null;
     };
-  }, [t]);
+  }, [t, modelOrMode]);
 
   useEffect(() => {
     const sub = eventEmitter.addListener('onAlphabetFrame126', (payload: unknown) => {
