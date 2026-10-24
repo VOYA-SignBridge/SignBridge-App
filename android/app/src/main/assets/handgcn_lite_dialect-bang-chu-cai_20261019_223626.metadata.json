@@ -1,0 +1,747 @@
+{
+  "schema_version": "1.0",
+  "artifact_format": "tflite",
+  "model_type": "HandGCN_Lite",
+  "model_config": {
+    "model": "HandGCN_Lite",
+    "input_dim": 126,
+    "output_dim": 30,
+    "num_nodes": 42,
+    "gcn_channels": 64,
+    "num_gcn_layers": 2,
+    "temporal_channels": 128,
+    "dropout": 0.3,
+    "max_distance": 2
+  },
+  "input": {
+    "shape": [
+      1,
+      60,
+      126
+    ],
+    "dtype": "float32",
+    "preprocessing": "external; identical to training"
+  },
+  "output": {
+    "shape": [
+      1,
+      30
+    ],
+    "dtype": "float32",
+    "semantics": "logits"
+  },
+  "converter": {
+    "name": "litert_torch",
+    "version": "0.9.4",
+    "pytorch_version": "2.13.0+cu130"
+  },
+  "verification": {
+    "cases": 8,
+    "atol": 1e-05,
+    "rtol": 0.0001,
+    "max_abs_error": 4.1961669921875e-05
+  },
+  "training_contract": {
+    "schema_version": "1.0",
+    "model_type": "HandGCN_Lite",
+    "model_config": {
+      "model": "HandGCN_Lite",
+      "input_dim": 126,
+      "output_dim": 30,
+      "num_nodes": 42,
+      "gcn_channels": 64,
+      "num_gcn_layers": 2,
+      "temporal_channels": 128,
+      "dropout": 0.3,
+      "max_distance": 2
+    },
+    "feature_dim": 126,
+    "seq_len": 60,
+    "num_classes": 30,
+    "idx_to_label": {
+      "0": {
+        "label_key": "07ab9408-4fc6-42ac-a41f-9ad289b91969",
+        "class_uid": "07ab9408-4fc6-42ac-a41f-9ad289b91969",
+        "label_slug": "n",
+        "label_original": "N",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "1": {
+        "label_key": "0cebb97d-5300-4297-952e-601fde506004",
+        "class_uid": "0cebb97d-5300-4297-952e-601fde506004",
+        "label_slug": "o",
+        "label_original": "O",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "2": {
+        "label_key": "356d0732-cf18-4cfb-bded-5ac06d847a3e",
+        "class_uid": "356d0732-cf18-4cfb-bded-5ac06d847a3e",
+        "label_slug": "q",
+        "label_original": "Q",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "3": {
+        "label_key": "3910ecab-6306-4d26-a9ff-e7e923f7ad9f",
+        "class_uid": "3910ecab-6306-4d26-a9ff-e7e923f7ad9f",
+        "label_slug": "i",
+        "label_original": "I",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "4": {
+        "label_key": "3a9d324b-5e21-4bc1-8cc1-7de8346b85b8",
+        "class_uid": "3a9d324b-5e21-4bc1-8cc1-7de8346b85b8",
+        "label_slug": "r",
+        "label_original": "R",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "5": {
+        "label_key": "42d9e7de-4628-40e2-b90b-a235d32e6632",
+        "class_uid": "42d9e7de-4628-40e2-b90b-a235d32e6632",
+        "label_slug": "t",
+        "label_original": "T",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "6": {
+        "label_key": "49ab9b7a-4a36-41ca-acea-92da53adc53c",
+        "class_uid": "49ab9b7a-4a36-41ca-acea-92da53adc53c",
+        "label_slug": "a",
+        "label_original": "A",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "7": {
+        "label_key": "49d38489-1561-4146-9880-4ed7107b95e8",
+        "class_uid": "49d38489-1561-4146-9880-4ed7107b95e8",
+        "label_slug": "ee",
+        "label_original": "Ê",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "8": {
+        "label_key": "4b68a54b-c902-4b54-b52b-5827c90ce04c",
+        "class_uid": "4b68a54b-c902-4b54-b52b-5827c90ce04c",
+        "label_slug": "dd",
+        "label_original": "Đ",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "9": {
+        "label_key": "60bed4e1-4f2f-4526-ad75-a4501ee58a85",
+        "class_uid": "60bed4e1-4f2f-4526-ad75-a4501ee58a85",
+        "label_slug": "b",
+        "label_original": "B",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "10": {
+        "label_key": "6a698d04-19f5-4742-94dd-419deab85c49",
+        "class_uid": "6a698d04-19f5-4742-94dd-419deab85c49",
+        "label_slug": "m",
+        "label_original": "M",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "11": {
+        "label_key": "6df3b6d1-fa0c-4435-87ca-91e2cea78d13",
+        "class_uid": "6df3b6d1-fa0c-4435-87ca-91e2cea78d13",
+        "label_slug": "z",
+        "label_original": "Z",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "12": {
+        "label_key": "74491583-7d72-4b9f-91b5-18f039d50aa7",
+        "class_uid": "74491583-7d72-4b9f-91b5-18f039d50aa7",
+        "label_slug": "g",
+        "label_original": "G",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "13": {
+        "label_key": "80ab9d55-06b3-4fc7-8457-83c51cfe3ef7",
+        "class_uid": "80ab9d55-06b3-4fc7-8457-83c51cfe3ef7",
+        "label_slug": "aw",
+        "label_original": "Ă",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "14": {
+        "label_key": "849d0b5c-96dd-4dc4-96cc-421d69364e40",
+        "class_uid": "849d0b5c-96dd-4dc4-96cc-421d69364e40",
+        "label_slug": "v",
+        "label_original": "V",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "15": {
+        "label_key": "86198dbe-45b0-40c6-903e-10bc99642571",
+        "class_uid": "86198dbe-45b0-40c6-903e-10bc99642571",
+        "label_slug": "s",
+        "label_original": "S",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "16": {
+        "label_key": "870073c5-30cc-40c6-9c7d-d9d01de52074",
+        "class_uid": "870073c5-30cc-40c6-9c7d-d9d01de52074",
+        "label_slug": "oo",
+        "label_original": "Ô",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "17": {
+        "label_key": "8c1e0174-e611-4300-8c1c-1565871f03aa",
+        "class_uid": "8c1e0174-e611-4300-8c1c-1565871f03aa",
+        "label_slug": "u",
+        "label_original": "U",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "18": {
+        "label_key": "905a0da2-0e92-4d75-8253-45dc79d0f44d",
+        "class_uid": "905a0da2-0e92-4d75-8253-45dc79d0f44d",
+        "label_slug": "l",
+        "label_original": "L",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "19": {
+        "label_key": "a447f40e-4e68-42c2-b20d-08ac5b12c451",
+        "class_uid": "a447f40e-4e68-42c2-b20d-08ac5b12c451",
+        "label_slug": "d",
+        "label_original": "D",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "20": {
+        "label_key": "aa57b18a-8318-4030-b356-00eddeef3845",
+        "class_uid": "aa57b18a-8318-4030-b356-00eddeef3845",
+        "label_slug": "h",
+        "label_original": "H",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "21": {
+        "label_key": "ba9d934f-9836-4da5-946a-f6b5193a3cc8",
+        "class_uid": "ba9d934f-9836-4da5-946a-f6b5193a3cc8",
+        "label_slug": "y",
+        "label_original": "Y",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "22": {
+        "label_key": "bd134d66-3e4b-4273-a8cf-8e33966c8cbd",
+        "class_uid": "bd134d66-3e4b-4273-a8cf-8e33966c8cbd",
+        "label_slug": "p",
+        "label_original": "P",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "23": {
+        "label_key": "c09fc8ba-781d-434a-844c-ab57902e06ed",
+        "class_uid": "c09fc8ba-781d-434a-844c-ab57902e06ed",
+        "label_slug": "e",
+        "label_original": "E",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "24": {
+        "label_key": "c8e6db29-fd24-47e2-b478-76fcb361c978",
+        "class_uid": "c8e6db29-fd24-47e2-b478-76fcb361c978",
+        "label_slug": "uw",
+        "label_original": "Ư",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "25": {
+        "label_key": "cf079207-e73b-420c-9e82-47d42851154f",
+        "class_uid": "cf079207-e73b-420c-9e82-47d42851154f",
+        "label_slug": "aa",
+        "label_original": "Â",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "26": {
+        "label_key": "d97fc7fd-0b6a-4feb-a857-d33ca6b9c12e",
+        "class_uid": "d97fc7fd-0b6a-4feb-a857-d33ca6b9c12e",
+        "label_slug": "k",
+        "label_original": "K",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "27": {
+        "label_key": "e19bfd88-5c54-4b76-a2c4-2b63e0054bfd",
+        "class_uid": "e19bfd88-5c54-4b76-a2c4-2b63e0054bfd",
+        "label_slug": "ow",
+        "label_original": "Ơ",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "28": {
+        "label_key": "f759ae47-ef10-40aa-9503-e9e259267a1e",
+        "class_uid": "f759ae47-ef10-40aa-9503-e9e259267a1e",
+        "label_slug": "x",
+        "label_original": "X",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      },
+      "29": {
+        "label_key": "fd742027-b37f-4ef3-934e-fb53f1905021",
+        "class_uid": "fd742027-b37f-4ef3-934e-fb53f1905021",
+        "label_slug": "c",
+        "label_original": "C",
+        "language": "vn",
+        "dialect": "bang-chu-cai",
+        "region": "nam"
+      }
+    },
+    "label_to_idx": {
+      "07ab9408-4fc6-42ac-a41f-9ad289b91969": 0,
+      "0cebb97d-5300-4297-952e-601fde506004": 1,
+      "356d0732-cf18-4cfb-bded-5ac06d847a3e": 2,
+      "3910ecab-6306-4d26-a9ff-e7e923f7ad9f": 3,
+      "3a9d324b-5e21-4bc1-8cc1-7de8346b85b8": 4,
+      "42d9e7de-4628-40e2-b90b-a235d32e6632": 5,
+      "49ab9b7a-4a36-41ca-acea-92da53adc53c": 6,
+      "49d38489-1561-4146-9880-4ed7107b95e8": 7,
+      "4b68a54b-c902-4b54-b52b-5827c90ce04c": 8,
+      "60bed4e1-4f2f-4526-ad75-a4501ee58a85": 9,
+      "6a698d04-19f5-4742-94dd-419deab85c49": 10,
+      "6df3b6d1-fa0c-4435-87ca-91e2cea78d13": 11,
+      "74491583-7d72-4b9f-91b5-18f039d50aa7": 12,
+      "80ab9d55-06b3-4fc7-8457-83c51cfe3ef7": 13,
+      "849d0b5c-96dd-4dc4-96cc-421d69364e40": 14,
+      "86198dbe-45b0-40c6-903e-10bc99642571": 15,
+      "870073c5-30cc-40c6-9c7d-d9d01de52074": 16,
+      "8c1e0174-e611-4300-8c1c-1565871f03aa": 17,
+      "905a0da2-0e92-4d75-8253-45dc79d0f44d": 18,
+      "a447f40e-4e68-42c2-b20d-08ac5b12c451": 19,
+      "aa57b18a-8318-4030-b356-00eddeef3845": 20,
+      "ba9d934f-9836-4da5-946a-f6b5193a3cc8": 21,
+      "bd134d66-3e4b-4273-a8cf-8e33966c8cbd": 22,
+      "c09fc8ba-781d-434a-844c-ab57902e06ed": 23,
+      "c8e6db29-fd24-47e2-b478-76fcb361c978": 24,
+      "cf079207-e73b-420c-9e82-47d42851154f": 25,
+      "d97fc7fd-0b6a-4feb-a857-d33ca6b9c12e": 26,
+      "e19bfd88-5c54-4b76-a2c4-2b63e0054bfd": 27,
+      "f759ae47-ef10-40aa-9503-e9e259267a1e": 28,
+      "fd742027-b37f-4ef3-934e-fb53f1905021": 29
+    },
+    "normalization_version": "hands126_v1",
+    "feature_version": "v1",
+    "preprocess_contract": {
+      "landmark_order": "MP_Left(63)+MP_Right(63)",
+      "missing_hands": "zero_filled",
+      "coordinate_space": "mediapipe_normalized",
+      "coordinate_order": "xyz",
+      "frontend_mirroring": "visual_only",
+      "expects_strict_shape": [
+        60,
+        126
+      ]
+    },
+    "metrics": {
+      "test_acc": 0.9544303797468354,
+      "test_f1": 0.9550663344974939,
+      "handedness": {
+        "left_only_acc": 0.958904109589041,
+        "left_only_n": 146,
+        "right_only_acc": 0.9523809523809523,
+        "right_only_n": 231,
+        "both_acc": 0.9444444444444444,
+        "both_n": 18
+      }
+    },
+    "created_at": "20261019_223626",
+    "label_mapping": {
+      "class_mapping_hash": "73965d090d7fa1db75403da54510b02af9b7feb47a5c10b37e89a3c23d97c2b1",
+      "classes": [
+        {
+          "class_uid": "07ab9408-4fc6-42ac-a41f-9ad289b91969",
+          "target_idx": 0,
+          "class_idx": "10",
+          "slug": "n",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "0cebb97d-5300-4297-952e-601fde506004",
+          "target_idx": 1,
+          "class_idx": "11",
+          "slug": "o",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "356d0732-cf18-4cfb-bded-5ac06d847a3e",
+          "target_idx": 2,
+          "class_idx": "13",
+          "slug": "q",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "3910ecab-6306-4d26-a9ff-e7e923f7ad9f",
+          "target_idx": 3,
+          "class_idx": "25",
+          "slug": "i",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "3a9d324b-5e21-4bc1-8cc1-7de8346b85b8",
+          "target_idx": 4,
+          "class_idx": "14",
+          "slug": "r",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "42d9e7de-4628-40e2-b90b-a235d32e6632",
+          "target_idx": 5,
+          "class_idx": "16",
+          "slug": "t",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "49ab9b7a-4a36-41ca-acea-92da53adc53c",
+          "target_idx": 6,
+          "class_idx": "20",
+          "slug": "a",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "49d38489-1561-4146-9880-4ed7107b95e8",
+          "target_idx": 7,
+          "class_idx": "48",
+          "slug": "ee",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "4b68a54b-c902-4b54-b52b-5827c90ce04c",
+          "target_idx": 8,
+          "class_idx": "47",
+          "slug": "dd",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "60bed4e1-4f2f-4526-ad75-a4501ee58a85",
+          "target_idx": 9,
+          "class_idx": "21",
+          "slug": "b",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "6a698d04-19f5-4742-94dd-419deab85c49",
+          "target_idx": 10,
+          "class_idx": "9",
+          "slug": "m",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "6df3b6d1-fa0c-4435-87ca-91e2cea78d13",
+          "target_idx": 11,
+          "class_idx": "32",
+          "slug": "z",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "74491583-7d72-4b9f-91b5-18f039d50aa7",
+          "target_idx": 12,
+          "class_idx": "23",
+          "slug": "g",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "80ab9d55-06b3-4fc7-8457-83c51cfe3ef7",
+          "target_idx": 13,
+          "class_idx": "45",
+          "slug": "aw",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "849d0b5c-96dd-4dc4-96cc-421d69364e40",
+          "target_idx": 14,
+          "class_idx": "18",
+          "slug": "v",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "86198dbe-45b0-40c6-903e-10bc99642571",
+          "target_idx": 15,
+          "class_idx": "15",
+          "slug": "s",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "870073c5-30cc-40c6-9c7d-d9d01de52074",
+          "target_idx": 16,
+          "class_idx": "49",
+          "slug": "oo",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "8c1e0174-e611-4300-8c1c-1565871f03aa",
+          "target_idx": 17,
+          "class_idx": "17",
+          "slug": "u",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "905a0da2-0e92-4d75-8253-45dc79d0f44d",
+          "target_idx": 18,
+          "class_idx": "27",
+          "slug": "l",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "a447f40e-4e68-42c2-b20d-08ac5b12c451",
+          "target_idx": 19,
+          "class_idx": "7",
+          "slug": "d",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "aa57b18a-8318-4030-b356-00eddeef3845",
+          "target_idx": 20,
+          "class_idx": "24",
+          "slug": "h",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "ba9d934f-9836-4da5-946a-f6b5193a3cc8",
+          "target_idx": 21,
+          "class_idx": "29",
+          "slug": "y",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "bd134d66-3e4b-4273-a8cf-8e33966c8cbd",
+          "target_idx": 22,
+          "class_idx": "12",
+          "slug": "p",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "c09fc8ba-781d-434a-844c-ab57902e06ed",
+          "target_idx": 23,
+          "class_idx": "8",
+          "slug": "e",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "c8e6db29-fd24-47e2-b478-76fcb361c978",
+          "target_idx": 24,
+          "class_idx": "51",
+          "slug": "uw",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "cf079207-e73b-420c-9e82-47d42851154f",
+          "target_idx": 25,
+          "class_idx": "46",
+          "slug": "aa",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "d97fc7fd-0b6a-4feb-a857-d33ca6b9c12e",
+          "target_idx": 26,
+          "class_idx": "26",
+          "slug": "k",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "e19bfd88-5c54-4b76-a2c4-2b63e0054bfd",
+          "target_idx": 27,
+          "class_idx": "50",
+          "slug": "ow",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "f759ae47-ef10-40aa-9503-e9e259267a1e",
+          "target_idx": 28,
+          "class_idx": "28",
+          "slug": "x",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        },
+        {
+          "class_uid": "fd742027-b37f-4ef3-934e-fb53f1905021",
+          "target_idx": 29,
+          "class_idx": "22",
+          "slug": "c",
+          "dialect": "bang-chu-cai",
+          "region": "nam"
+        }
+      ]
+    },
+    "split_provenance": {
+      "split_id": "newdata-20261019-bang-chu-cai",
+      "purpose": "operational",
+      "class_set_hash": "ec314ec4e9535690fdbf2cd62d8592ea75b655b9ecf2a70a27238f427c0cdbd4",
+      "class_mapping_hash": "73965d090d7fa1db75403da54510b02af9b7feb47a5c10b37e89a3c23d97c2b1",
+      "num_classes": 30,
+      "scope": {
+        "dialects": [
+          "bang-chu-cai"
+        ]
+      },
+      "files": {
+        "train.csv": {
+          "sha256": "c4232d76c63a2cef876f220bc2679c17e3dd51395e09c250ffe85503b9c269fa",
+          "bytes": 937919
+        },
+        "val.csv": {
+          "sha256": "f9d63a169809e645710f8af4e5161f9923d46d1720c82af8312849ff75292f89",
+          "bytes": 204623
+        },
+        "test.csv": {
+          "sha256": "c6f2a28d6bcb21774c04a928a1c7fb11c1e889e0a049e0cda4916a774149b734",
+          "bytes": 203677
+        }
+      },
+      "policy": {
+        "min_samples_per_class": 25,
+        "min_classes": 2
+      },
+      "generated_at": "2026-10-19T14:02:53.017272+00:00"
+    },
+    "vocabulary_schema_version": "v1_legacy",
+    "recognition_profile": "",
+    "include_common": false,
+    "unified": false,
+    "dataset_version": "unversioned",
+    "split_version": "unversioned",
+    "preprocess_contract_version": "v2",
+    "storage_contract_version": "npz_v2",
+    "motion_types_present": [],
+    "common_labels": [],
+    "profile_specific_labels": [],
+    "seed": 42,
+    "run_purpose": "smoke_test",
+    "run_status": "completed",
+    "model_selection": {
+      "criterion": "val_macro_f1",
+      "restored_best_state": true,
+      "best_epoch": 77,
+      "best_val_f1": 0.9569712750287462,
+      "best_val_acc": 0.9570707070707071,
+      "early_stopping_patience": 10
+    },
+    "determinism": {
+      "seed": 42,
+      "mode": "fast",
+      "cudnn_deterministic": false,
+      "cublas_workspace_config": "",
+      "deterministic_algorithms": false,
+      "warnings": [
+        "determinism=fast: kernel không deterministic, kết quả KHÔNG tái lập bit-for-bit. Chỉ dùng cho run thăm dò, không dùng cho số liệu bài báo."
+      ]
+    },
+    "runtime_env": {
+      "python_version": "3.12.3",
+      "pytorch_version": "2.13.0+cu130",
+      "numpy_version": "2.5.4",
+      "cuda_version": "13.0",
+      "cudnn_version": 92000,
+      "device": "cuda",
+      "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39"
+    },
+    "git_commit": "cafcce1e9b2c141d59b6b6f41a017869b9d33b26",
+    "training_config": {
+      "train_csv": "processed/train_utils/outputs/wsl-bang-chu-cai-80epochs/subset_dialect-bang-chu-cai_20261019_223058/train.csv",
+      "val_csv": "processed/train_utils/outputs/wsl-bang-chu-cai-80epochs/subset_dialect-bang-chu-cai_20261019_223058/val.csv",
+      "test_csv": "processed/train_utils/outputs/wsl-bang-chu-cai-80epochs/subset_dialect-bang-chu-cai_20261019_223058/test.csv",
+      "batch_size": 32,
+      "epochs": 80,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "dropout": 0.3,
+      "channels": 64,
+      "levels": 3,
+      "kernel_size": 5,
+      "seed": 42,
+      "patience": 10,
+      "device": "cuda",
+      "num_workers": 0,
+      "out_dir": "processed/train_utils/outputs/wsl-bang-chu-cai-80epochs",
+      "model_type": "hdgcn_lite",
+      "augmentation": {
+        "profile": "full",
+        "enabled": true,
+        "augmentation_contract_version": "v2_wrist_centered_mirror",
+        "p": 0.9,
+        "noise_std": 0.008,
+        "scale_range": [
+          0.97,
+          1.03
+        ],
+        "translation_std": 0.01,
+        "mirror_prob": 0.5,
+        "dropout_prob": 0.015,
+        "temporal_mask_prob": 0.0,
+        "temporal_jitter_prob": 0.25,
+        "max_temporal_shift": 2
+      }
+    },
+    "dataset_manifest_checksum": ""
+  }
+}

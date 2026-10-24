@@ -3,7 +3,7 @@ package com.nmnghi.VOYA_App.alphabet
 /** Raw MediaPipe Left/Right slots in, training serving tensor out. Alphabet only. */
 object AlphabetPreprocessing {
     const val VERSION = "alphabet_hands126_v1"
-
+    const val HANDGCN_VERSION = "handgcn_mediapipe126_v1"
     fun prepare(raw: FloatArray, swapHandedness: Boolean, mirrorX: Boolean): FloatArray {
         require(raw.size == 126 && raw.all { it.isFinite() }) { "Alphabet requires 126 finite raw coordinates" }
         val out = FloatArray(126)
@@ -47,5 +47,16 @@ object AlphabetPreprocessing {
         }
         require(out.all { it.isFinite() }) { "Alphabet normalization overflow" }
         return out
+    }
+    /** HandGCN training contract uses raw MediaPipe normalized xyz in Left/Right order.
+     * JS camera currently serializes reversed MediaPipe slots, hence one swap here.
+     * Do not apply wrist centering or hand-span rescaling to this model.
+     */
+    fun prepareHandGcn(raw: FloatArray, swapHandedness: Boolean): FloatArray {
+        require(raw.size == 126 && raw.all { it.isFinite() }) {
+            "HandGCN requires 126 finite features"
+        }
+        if (!swapHandedness) return raw.copyOf()
+        return FloatArray(126) { i -> raw[if (i < 63) i + 63 else i - 63] }
     }
 }

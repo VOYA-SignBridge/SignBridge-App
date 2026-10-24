@@ -119,7 +119,7 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
     fun getTcnModelConfig(modelKey: String, promise: Promise) {
         try {
             val config = resolveTcnModel(modelKey)
-            if (config.normalizationVersion == AlphabetPreprocessing.VERSION) {
+            if (config.normalizationVersion in setOf(AlphabetPreprocessing.VERSION, AlphabetPreprocessing.HANDGCN_VERSION)) {
                 synchronized(tcnLock) { ensureAlphabetRuntime() }
             }
             promise.resolve(modelConfigToWritableMap(config))
@@ -151,7 +151,7 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
         try {
             val config = resolveTcnModel(modelKey)
 
-            if (config.normalizationVersion == AlphabetPreprocessing.VERSION) {
+            if (config.normalizationVersion in setOf(AlphabetPreprocessing.VERSION, AlphabetPreprocessing.HANDGCN_VERSION)) {
                 predictAlphabet(frames, false, promise)
                 return
             }
@@ -490,13 +490,10 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
 
     private fun validateTcnModelConfig(config: TcnModelConfig) {
         require(config.sequenceLength > 0) { "${config.id}: sequenceLength must be positive" }
-        require(config.featureDimension == HAND_FEATURE_DIM) {
+        require(config.normalizationVersion in setOf(HANDS126_NORMALIZATION_VERSION, AlphabetPreprocessing.VERSION, AlphabetPreprocessing.HANDGCN_VERSION)) {
             "${config.id}: this landmark pipeline requires featureDimension=$HAND_FEATURE_DIM"
         }
         require(config.classCount > 0) { "${config.id}: classCount must be positive" }
-        require(config.normalizationVersion in setOf(HANDS126_NORMALIZATION_VERSION, AlphabetPreprocessing.VERSION)) {
-            "${config.id}: unsupported normalizationVersion '${config.normalizationVersion}'"
-        }
     }
 
     private fun resolveTcnModel(modelKey: String?): TcnModelConfig {
@@ -518,7 +515,7 @@ class HandLandmarksModule(reactContext: ReactApplicationContext) : ReactContextB
             putBoolean("mirrorInput", config.mirrorInput)
             putBoolean("swapHandedness", config.swapHandedness)
             putString("normalizationVersion", config.normalizationVersion)
-            if (config.normalizationVersion == AlphabetPreprocessing.VERSION) putInt("sampleFps", 30)
+            if (config.normalizationVersion in setOf(AlphabetPreprocessing.VERSION, AlphabetPreprocessing.HANDGCN_VERSION)) putInt("sampleFps", 30)
         }
     }
 
